@@ -6,10 +6,30 @@
 import requests, json, types, re
 import pandas as pd
 
-host = "http://localhost"
 
 ###############################################################################
 # Functions used by the cell and line magics
+def load_plugins(host):
+    for route, plugin_type in [("py", "python_runner"),
+                               ("js", "javascript_runner")]:
+                               
+        resp = requests.put(host+'/v1/plugins/' + route + "runner?sync=true",
+                        data=json.dumps({'type' : plugin_type}))
+        if resp.status_code == 201:
+            continue
+        if resp.status_code == 400:
+            resp = requests.get(host+'/v1/plugins/' + route + "runner")
+            if resp.status_code != 200:
+                raise Exception("Failed to initialize plugin " + plugin_type)
+            try:
+                if resp.json()['config']['type'] != plugin_type:
+                    raise Exception("Failed to initialize plugin {}. "
+                                    "Some other plugin was thre."
+                                    .format(plugin_type))
+            except Exception as e:
+                print e
+                raise Exception("Failed to check if {} was already loaded"
+                                .format(plugin_type))
 
 def get_usage_message():
     return ("""\
@@ -118,6 +138,9 @@ def run_query(ds, q):
 
 ###############################################################################
 # The Magic functions themselves
+
+host = "http://localhost"
+load_plugins(host)
 
 def mldb(line, cell=None):
     global host
