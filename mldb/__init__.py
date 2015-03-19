@@ -6,31 +6,10 @@
 import requests, json, types, re
 import pandas as pd
 
-host = None
+host = "http://localhost"
 
 ###############################################################################
 # Functions used by the cell and line magics
-def load_plugins(host):
-    for route, plugin_type in [("py", "python_runner"),
-                               ("js", "javascript_runner")]:
-                               
-        resp = requests.put(host+'/v1/plugins/' + route + "runner?sync=true",
-                        data=json.dumps({'type' : plugin_type}))
-        if resp.status_code == 201:
-            continue
-        if resp.status_code == 400:
-            resp = requests.get(host+'/v1/plugins/' + route + "runner")
-            if resp.status_code != 200:
-                raise Exception("Failed to initialize plugin " + plugin_type)
-            try:
-                if resp.json()['config']['type'] != plugin_type:
-                    raise Exception("Failed to initialize plugin {}. "
-                                    "Some other plugin was thre."
-                                    .format(plugin_type))
-            except Exception as e:
-                print e
-                raise Exception("Failed to check if {} was already loaded"
-                                .format(plugin_type))
 
 def get_usage_message():
     return ("""\
@@ -40,7 +19,9 @@ Usage:
 
     %mldb help          Print this message
     
-    %mldb init <url>    Initialize the plugins for the cell magics
+    %mldb init <url>    Initialize the plugins for the cell magics.
+                        Extension comes pre-initialized with <uri> 
+                        set to "http://localhost"
 
     %mldb py <uri>      Run a python script named "main.py" from <uri>.
                         <uri> can be one of:
@@ -78,7 +59,11 @@ Usage:
 
 def add_repr_html_to_response(resp):
     def _repr_html_(self):
-        result = "<strong>%d %s</strong><br />" % (self.status_code, self.reason)
+        result = "<strong>%s %s</strong><br />" % (self.request.method, self.request.url)
+        color = "black"
+        if self.status_code >= 400: color = "red" 
+        if self.status_code < 300: color = "green" 
+        result += "<strong style=\"color: %s;\">%d %s</strong><br /> " % (color, self.status_code, self.reason)
         if "content-type" in self.headers:
             if self.headers["content-type"] == "application/json":
                 result += "<pre>%s</pre>" % json.dumps(json.loads(self.content), indent=2)
@@ -151,7 +136,6 @@ def mldb(line, cell=None):
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
             host = parts[1].strip("/")
-            load_plugins(host)
             return
 
         # py or js: put a javascript or python script from an uri

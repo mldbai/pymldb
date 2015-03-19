@@ -7,7 +7,7 @@ def decorate_response(fn):
     return inner
 
 class Endpoint():
-    def __init__(self, uri):
+    def __init__(self, uri="http://localhost"):
         if not uri.startswith("http"): 
             raise Exception("URIs must start with 'http'")
         self.uri = uri.strip("/")
@@ -34,16 +34,18 @@ class Endpoint():
         return requests.put(self.uri, **kwargs)
     
     @decorate_response
-    def put_json(self, payload): 
-        return requests.put(self.uri, data=json.dumps(payload))
+    def put_json(self, payload, sync=True): 
+        return requests.put(self.uri, data=json.dumps(payload), 
+            params=dict(sync=str(sync).lower()))
     
     @decorate_response
     def post(self, *args, **kwargs): 
         return requests.post(self.uri, **kwargs)
     
     @decorate_response
-    def post_json(self, payload): 
-        return requests.post(self.uri, data=json.dumps(payload))
+    def post_json(self, payload, sync=True): 
+        return requests.post(self.uri, data=json.dumps(payload), 
+            params=dict(sync=str(sync).lower()))
     
     @decorate_response
     def delete(self, *args, **kwargs): 
