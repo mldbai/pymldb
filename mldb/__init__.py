@@ -162,11 +162,14 @@ def mldb(line, cell=None):
             return
 
         # py or js: put a javascript or python script from an uri
-        elif (len(parts) == 2 and parts[0] in ["py", "js"]):
+        elif (len(parts) >= 2 and parts[0] in ["py", "js"]):
 
-            type_runner, uri = parts
+            type_runner = parts[0]
+            payload = {"address": parts[1]}
+            if len(parts) > 2:
+                payload["args"] = json.loads(" ".join(parts[2:]))
             resp = requests.post(host+"/v1/plugins/" + type_runner + "runner/routes/run",
-                             data=json.dumps({'address': uri}))
+                             data=json.dumps(payload))
             return add_repr_html_to_response(resp)
 
         # perform
@@ -198,11 +201,14 @@ def mldb(line, cell=None):
     # The cell magics
     else:
         # py or js: put a javascript or python script from an uri
-        if (len(parts) == 1 and parts[0] in ["py", "js"]):
+        if (len(parts) >= 1 and parts[0] in ["py", "js"]):
 
             type_runner = parts[0]
+            payload = {"source": cell}
+            if len(parts) > 1:
+                payload["args"] = json.loads(" ".join(parts[1:]))
             resp = requests.post(host+"/v1/plugins/" + type_runner + "runner/routes/run",
-                             data=json.dumps({'source': cell}))
+                             data=json.dumps(payload))
             
             return add_repr_html_to_response(resp)
         
