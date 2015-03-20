@@ -41,13 +41,26 @@ Usage:
 
   Line magic functions:
 
-    %mldb help          Print this message
+    %mldb help          
+                        Print this message
     
-    %mldb init <url>    Initialize the plugins for the cell magics.
+    %mldb init <url>    
+                        Initialize the plugins for the cell magics.
                         Extension comes pre-initialized with <uri> 
                         set to "http://localhost"
 
-    %mldb py <uri>      Run a python script named "main.py" from <uri>.
+    %mldb py <uri> <json args>
+                        Run a python script named "main.py" from <uri>
+                        and pass in <json args> as arguments.
+                        <uri> can be one of:
+                          - file://<rest of the uri>: a local directory
+                          - gist://<rest of the uri>: a gist
+                          - git://<rest of the uri>: a public git repo
+
+    %mldb pyplugin <name> <uri>
+                        Load a python plugin called <name> from <uri> 
+                        by executing its main.py. Any pre-existing plugin
+                        called <name> will be deleted first.
                         <uri> can be one of:
                           - file://<rest of the uri>: a local directory
                           - gist://<rest of the uri>: a gist
@@ -61,19 +74,25 @@ Usage:
                         
   Cell magic functions:
 
-    %%mldb py           Run a python script in MLDB from the cell body.
+    %%mldb py <json args>
+    <python code>
+                        Run a python script in MLDB from the cell body.
     
     %%mldb query <dataset>
+    <sql>
                         Run an SQL-like query from the cell body on 
                         <dataset> and return a pandas DataFrame.
     
     %%mldb GET <route>
+    <json query params>
                         HTTP GET request to <route>, cell body will be
                         parsed as JSON and used to create query string.
                         <route> should start with a '/'.
                         
     %%mldb PUT <route>
+    <json>
     %%mldb POST <route>
+    <json>
                         HTTP PUT/POST request to <route>, cell body will
                         be sent as JSON payload. <route> should start
                         with a '/'.
@@ -172,6 +191,16 @@ def mldb(line, cell=None):
                 payload["args"] = json.loads(" ".join(parts[2:]))
             resp = requests.post(host+"/v1/plugins/" + type_runner + "runner/routes/run",
                              data=json.dumps(payload))
+            return add_repr_html_to_response(resp)
+        
+        # pyplugin
+        elif (len(parts) == 3 and parts[0] == "pyplugin"):
+    
+            name = parts[1]
+            payload = {"type":"python", "params": {"address": parts[2]}}
+            requests.delete(host+"/v1/plugins/" + name)
+            resp = requests.put(host+"/v1/plugins/" + name,
+                             data=json.dumps(payload), params=dict(sync="true"))
             return add_repr_html_to_response(resp)
 
         # perform
