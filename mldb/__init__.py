@@ -7,9 +7,13 @@ import requests, json, types, re
 import pandas as pd
 
 
+host = None
+
 ###############################################################################
 # Functions used by the cell and line magics
-def load_plugins(host):
+def load_plugins(in_host):
+    global host
+    host = in_host
     for route, plugin_type in [("py", "python_runner"),
                                ("js", "javascript_runner")]:
                                
@@ -139,8 +143,6 @@ def run_query(ds, q):
 ###############################################################################
 # The Magic functions themselves
 
-host = "http://localhost"
-load_plugins(host)
 
 def mldb(line, cell=None):
     global host
@@ -158,7 +160,7 @@ def mldb(line, cell=None):
         if len(parts) == 2 and parts[0] == "init":
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
-            host = parts[1].strip("/")
+            load_plugins(parts[1].strip("/"))
             return
 
         # py or js: put a javascript or python script from an uri
@@ -244,6 +246,7 @@ def mldb(line, cell=None):
 # Load and unload the extensions
 def load_ipython_extension(ipython, *args):
     ipython.register_magic_function(mldb, 'line_cell')
+    load_plugins("http://localhost")
 
 def unload_ipython_extension(ipython):
     pass
