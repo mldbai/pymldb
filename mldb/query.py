@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-06 14:53:37
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-19 10:37:46
+# @Last Modified time: 2015-03-20 15:57:30
 # @File Name:          query.py
 
 
@@ -68,7 +68,10 @@ class Query(object):
             raise RuntimeError("Can only slice with integer")
         if value < 0:
             raise RuntimeError("Slicing with negative index is not allowed")
-        self.OFFSET = value
+        if self.OFFSET is None:
+            self.OFFSET = value
+        if self.OFFSET < value:
+            self.OFFSET = value
 
     def setLIMIT(self, value):
         # Basically the stop of slicing. This can normally be a negative
@@ -78,7 +81,10 @@ class Query(object):
             raise RuntimeError("Can only slice with integer")
         if value < 0:
             raise RuntimeError("Slicing with negative index is not allowed")
-        self.LIMIT = value
+        if self.LIMIT is None:
+            self.LIMIT = value
+        if self.LIMIT > value:
+            self.LIMIT = value
 
     def addORDERBY(self, value):
         self.ORDERBY.append(value)
