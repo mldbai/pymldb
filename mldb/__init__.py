@@ -139,7 +139,7 @@ def json_to_dataframe(resp_json):
 def run_query(ds, q):
     global host
     query = re.match(
-        r"^(select (.+?))?(where (.+?))?(order by (.+?))?(group by (.+?))?$", 
+        r"^(select (.+?))?(where (.+?))?(order by (.+?))?(group by (.+?))?(limit (.+?))?$", 
         q.replace("\n", " ").strip(),
         flags=re.IGNORECASE
     )
@@ -150,6 +150,8 @@ def run_query(ds, q):
     if query.groups()[3]: params["where"]=  query.groups()[3].strip()
     if query.groups()[5]: params["orderBy"]=query.groups()[5].strip()
     if query.groups()[7]: params["groupBy"]=query.groups()[7].strip()
+    if query.groups()[9]: params["limit"]=query.groups()[9].strip()
+
         
     resp = requests.get(host+"/v1/datasets/"+ds+"/query", params=params)
     
