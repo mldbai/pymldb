@@ -11,29 +11,6 @@ host = None
 
 ###############################################################################
 # Functions used by the cell and line magics
-def load_plugins(in_host):
-    global host
-    host = in_host
-    for route, plugin_type in [("py", "python_runner"),
-                               ("js", "javascript_runner")]:
-                               
-        resp = requests.put(host+'/v1/plugins/' + route + "runner?sync=true",
-                        data=json.dumps({'type' : plugin_type}))
-        if resp.status_code == 201:
-            continue
-        if resp.status_code == 400:
-            resp = requests.get(host+'/v1/plugins/' + route + "runner")
-            if resp.status_code != 200:
-                raise Exception("Failed to initialize plugin " + plugin_type)
-            try:
-                if resp.json()['config']['type'] != plugin_type:
-                    raise Exception("Failed to initialize plugin {}. "
-                                    "Some other plugin was thre."
-                                    .format(plugin_type))
-            except Exception as e:
-                print e
-                raise Exception("Failed to check if {} was already loaded"
-                                .format(plugin_type))
 
 def get_usage_message():
     return ("""\
@@ -179,17 +156,18 @@ def mldb(line, cell=None):
         if len(parts) == 2 and parts[0] == "init":
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
-            load_plugins(parts[1].strip("/"))
             return
 
         # py or js: put a javascript or python script from an uri
         elif (len(parts) >= 2 and parts[0] in ["py", "js"]):
 
-            type_runner = parts[0]
+            type_name = "python"
+            if parts[0] == "js":
+                type_name = "javascript"
             payload = {"address": parts[1]}
             if len(parts) > 2:
                 payload["args"] = json.loads(" ".join(parts[2:]))
-            resp = requests.post(host+"/v1/plugins/" + type_runner + "runner/routes/run",
+            resp = requests.post(host+"/v1/types/plugins/" + type_name + "/routes/run",
                              data=json.dumps(payload))
             return add_repr_html_to_response(resp)
         
@@ -234,11 +212,13 @@ def mldb(line, cell=None):
         # py or js: put a javascript or python script from an uri
         if (len(parts) >= 1 and parts[0] in ["py", "js"]):
 
-            type_runner = parts[0]
+            type_name = "python"
+            if parts[0] == "js":
+                type_name = "javascript"
             payload = {"source": cell}
             if len(parts) > 1:
                 payload["args"] = json.loads(" ".join(parts[1:]))
-            resp = requests.post(host+"/v1/plugins/" + type_runner + "runner/routes/run",
+            resp = requests.post(host+"/v1/types/plugins/" + type_name + "/routes/run",
                              data=json.dumps(payload))
             
             return add_repr_html_to_response(resp)
@@ -275,7 +255,6 @@ def mldb(line, cell=None):
 # Load and unload the extensions
 def load_ipython_extension(ipython, *args):
     ipython.register_magic_function(mldb, 'line_cell')
-    load_plugins("http://localhost")
 
 def unload_ipython_extension(ipython):
     pass
