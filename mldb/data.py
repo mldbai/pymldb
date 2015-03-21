@@ -4,7 +4,7 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-19 10:38:31
+# @Last Modified time: 2015-03-20 14:49:43
 # @File Name:          data.py
 
 
@@ -51,6 +51,10 @@ class BatFrame(object):
             bf = self.copy()
             for value in val:
                 bf.query.addSELECT("\"{}\"".format(value))
+            return bf
+        elif isinstance(val, Column):
+            bf = self.copy()
+            bf.query.addWHERE("{}".format(val.execution_name))
             return bf
 
     @property
@@ -348,16 +352,56 @@ class Column(object):
         return self._binary_arithemtic(value, '%', self)
 
     def __or__(self, value):
-        raise NotImplementedError()
+        col = self.copy()
+        left = self.execution_name
+        right = value
+
+        col.query.removeSELECT(left)
+        if isinstance(value, Column):
+            right = value.execution_name
+            col.query.removeSELECT(right)
+
+        col.query.addWHERE('{} OR {}'.format(left, right))
+        return col.query
 
     def __and__(self, value):
-        raise NotImplementedError()
+        col = self.copy()
+        left = self.execution_name
+        right = value
+
+        col.query.removeSELECT(left)
+        if isinstance(value, Column):
+            right = value.execution_name
+            col.query.removeSELECT(right)
+
+        col.query.addWHERE('{} AND {}'.format(left, right))
+
+        return col.query
 
     def __rand__(self, value):
-        raise NotImplementedError()
+        col = self.copy()
+        left = self.execution_name
+        right = value
+
+        col.query.removeSELECT(left)
+        if isinstance(value, Column):
+            right = value.execution_name
+            col.query.removeSELECT(right)
+
+        col.query.addWHERE('{} AND {}'.format(right, left))
 
     def __ror__(self, value):
-        raise NotImplementedError()
+        col = self.copy()
+        left = self.execution_name
+        right = value
+
+        col.query.removeSELECT(left)
+        if isinstance(value, Column):
+            right = value.execution_name
+            col.query.removeSELECT(right)
+
+        col.query.addWHERE('{} AND {}'.format(right, left))
+        return col.query
 
     #################################
     #  Unary arithmetic operations  #
@@ -392,7 +436,9 @@ class Column(object):
         return self._unary_arithmetic('+')
 
     def __invert__(self):
-        raise NotImplementedError()
+        copy = self.copy()
+        copy.execution_name = "NOT {}".format(copy.execution_name)
+        return copy
 
     def __abs__(self):
         raise NotImplementedError()
