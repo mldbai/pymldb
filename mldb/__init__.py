@@ -89,12 +89,23 @@ def add_repr_html_to_response(resp):
         result += "<strong style=\"color: %s;\">%d %s</strong><br /> " % (color, self.status_code, self.reason)
         if "content-type" in self.headers:
             if self.headers["content-type"] == "application/json":
-                result += "<pre>%s</pre>" % json.dumps(json.loads(self.content), indent=2)
+                result += "<pre>%s</pre>" % json.dumps(self.json(), indent=2)
             elif self.headers["content-type"] == "text/html":
                 result += self.content
         return result
     resp._repr_html_ = types.MethodType(_repr_html_, resp)
     return resp
+
+def handle_script_output(resp):
+    result = resp.json()
+    if "out" in result:
+        for o in result["out"]:
+            print o
+    if "exception" in result:
+        for e in result["exception"]["stack"]:
+            print e 
+    if "return" in result:
+        return result["return"]
 
 def json_to_dataframe(resp_json):
     d = []
@@ -174,7 +185,7 @@ def mldb(line, cell=None):
                 payload["args"] = json.loads(" ".join(parts[2:]))
             resp = requests.post(host+"/v1/types/plugins/" + type_name + "/routes/run",
                              data=json.dumps(payload))
-            return add_repr_html_to_response(resp)
+            return handle_script_output(resp)
         
         # pyplugin
         elif (len(parts) == 3 and parts[0] == "pyplugin"):
@@ -224,7 +235,7 @@ def mldb(line, cell=None):
             resp = requests.post(host+"/v1/types/plugins/" + type_name + "/routes/run",
                              data=json.dumps(payload))
             
-            return add_repr_html_to_response(resp)
+            return handle_script_output(resp)
         
         if (len(parts) == 2 and parts[0] == "query"):
 
