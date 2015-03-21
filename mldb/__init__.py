@@ -7,13 +7,13 @@ import requests, json, types, re
 import pandas as pd
 
 
-host = None
+host = "http://localhost"
 
 ###############################################################################
 # Functions used by the cell and line magics
 
-def get_usage_message():
-    return ("""\
+def print_usage_message(unknown = False):
+    msg = """\
 Usage:
 
   Line magic functions:
@@ -74,7 +74,10 @@ Usage:
                         be sent as JSON payload. <route> should start
                         with a '/'.
 """
-    )
+    if unknown:
+        print "Unknown magic..."
+        print ""
+    print msg
 
 
 def add_repr_html_to_response(resp):
@@ -127,8 +130,7 @@ def run_query(ds, q):
     if query.groups()[3]: params["where"]=  query.groups()[3].strip()
     if query.groups()[5]: params["orderBy"]=query.groups()[5].strip()
     if query.groups()[7]: params["groupBy"]=query.groups()[7].strip()
-    if query.groups()[9]: params["limit"]=query.groups()[9].strip()
-
+    if query.groups()[9]: params["limit"]=  query.groups()[9].strip()
         
     resp = requests.get(host+"/v1/datasets/"+ds+"/query", params=params)
     
@@ -146,8 +148,8 @@ def mldb(line, cell=None):
     global host
 
     if line.strip() == "":
-        print "Unknown magic.\n\n" + get_usage_message()
-        return
+        return print_usage_message(True)
+        
     
     parts = line.strip().split(" ")
 
@@ -158,6 +160,7 @@ def mldb(line, cell=None):
         if len(parts) == 2 and parts[0] == "init":
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
+            host = parts[1].strip("/")
             return
 
         # py or js: put a javascript or python script from an uri
@@ -196,8 +199,7 @@ def mldb(line, cell=None):
 
         # help
         elif len(parts) == 1 and parts[0] == "help":
-            print get_usage_message()
-            return
+            return print_usage_message()
 
         elif (len(parts) > 2 and parts[0] == "query"):
 
@@ -206,8 +208,7 @@ def mldb(line, cell=None):
 
         # We have something else
         else:
-            print "Unknown magic.\n\n" + get_usage_message()
-            return
+            return print_usage_message(True)
 
     # The cell magics
     else:
@@ -245,13 +246,12 @@ def mldb(line, cell=None):
             return add_repr_html_to_response(resp)
         # help
         elif len(parts) == 1 and parts[0] == "help":
-            print get_usage_message()
-            return
+            return print_usage_message()
+            
 
         # We have something else
         else:
-            print "Unknown magic.\n\n" + get_usage_message()
-            return
+            return print_usage_message(True)
 
 ###############################################################################
 # Load and unload the extensions
