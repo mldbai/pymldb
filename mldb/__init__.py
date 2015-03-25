@@ -3,7 +3,7 @@
 # Mich, 2015-02-03
 # Copyright (c) 2013 Datacratic. All rights reserved.
 #
-import requests, json, types, re
+import requests, json, types
 import pandas as pd
 
 
@@ -129,21 +129,8 @@ def json_to_dataframe(resp_json):
 
 def run_query(ds, q):
     global host
-    query = re.match(
-        r"^(select (.+?))?(where (.+?))?(order by (.+?))?(group by (.+?))?(limit (.+?))?$", 
-        q.replace("\n", " ").strip(),
-        flags=re.IGNORECASE
-    )
-    
-    if not query.groups(): return "Unparsable query."
-    params = {}
-    if query.groups()[1]: params["select"]= query.groups()[1].strip()
-    if query.groups()[3]: params["where"]=  query.groups()[3].strip()
-    if query.groups()[5]: params["orderBy"]=query.groups()[5].strip()
-    if query.groups()[7]: params["groupBy"]=query.groups()[7].strip()
-    if query.groups()[9]: params["limit"]=  query.groups()[9].strip()
-        
-    resp = requests.get(host+"/v1/datasets/"+ds+"/query", params=params)
+
+    resp = requests.get(host+"/v1/datasets/"+ds+"/rawquery", params={"q": q})
     
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)
