@@ -114,7 +114,7 @@ def handle_script_output(resp):
     result = resp.json()
     if "out" in result:
         for o in result["out"]:
-            print o
+            print o[2]
     if "exception" in result:
         for e in result["exception"]["stack"]:
             print e 
