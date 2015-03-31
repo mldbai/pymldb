@@ -5,7 +5,17 @@
 #
 import requests, json, types
 import pandas as pd
+from pygments import highlight
+from pygments.lexers import JsonLexer
+from pygments.formatters import HtmlFormatter
+from pygments.style import Style
+from pygments.token import Keyword, Name, String, Number
 
+class PygmentsStyle(Style):
+    default_style = ""
+    styles = {
+        Name: 'bold #333', String: '#00d', Number: '#00d', Keyword: '#00d'
+    }
 
 host = "http://localhost"
 
@@ -89,7 +99,11 @@ def add_repr_html_to_response(resp):
         result += "<strong style=\"color: %s;\">%d %s</strong><br /> " % (color, self.status_code, self.reason)
         if "content-type" in self.headers:
             if self.headers["content-type"] == "application/json":
-                result += "<pre>%s</pre>" % json.dumps(self.json(), indent=2)
+                result += highlight(
+                    json.dumps(self.json(), indent=2), 
+                    JsonLexer(), 
+                    HtmlFormatter(noclasses = True, nobackground =True, style=PygmentsStyle)
+                    )
             elif self.headers["content-type"] == "text/html":
                 result += self.content
         return result
@@ -109,20 +123,16 @@ def handle_script_output(resp):
 
 def json_to_dataframe(resp_json):
     d = []
-    has_rowName = False
     for row in resp_json:
         tmp = {}
-        if "rowName" in row:
-            has_rowName = True
-            tmp["rowName"] = row["rowName"]
+        tmp["rowName"] = row["rowName"]
         if "columns" in row:
             for column in row["columns"]:
                 tmp[column[0]] = column[1]
         d.append(tmp)
     if len(d) > 0:
         df = pd.DataFrame(d)
-        if has_rowName:
-            df.set_index('rowName', inplace=True)
+        df.set_index('rowName', inplace=True)
     else:
         df = pd.DataFrame()
     return df
