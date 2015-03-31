@@ -4,7 +4,7 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-20 14:49:43
+# @Last Modified time: 2015-03-31 16:41:37
 # @File Name:          data.py
 
 
@@ -102,7 +102,7 @@ class BatFrame(object):
     def head(self, num_rows=5):
         bf = self.copy()
         bf.query.setLIMIT(num_rows)
-        return bf.toPandas()
+        return bf
 
     def query(self, query):
         raise NotImplementedError()
@@ -137,8 +137,7 @@ class BatFrame(object):
             rowCount = None
 
         if rowCount is not None and rowCount > 40:
-            print("...")
-            print("Total number rows: {}".format(rowCount))
+            print("{} rows".format(rowCount))
         return ""
 
 
@@ -433,7 +432,7 @@ class Column(object):
         return self._unary_arithmetic('-')
 
     def __pos__(self):
-        return self._unary_arithmetic('+')
+        raise NotImplementedError()
 
     def __invert__(self):
         copy = self.copy()
@@ -585,7 +584,6 @@ class Column(object):
             rowCount = None
 
         if rowCount is not None and rowCount > 40:
-            print("...")
-            print("Total number rows: {}".format(rowCount))
+            print("{} rows".format(rowCount))
         return ""
 
