@@ -14,6 +14,9 @@ class Endpoint():
     
     def __repr__(self):
         return self.uri
+
+    def __str__(self):
+        return self.uri
     
     def __call__(self, frag):
         return Endpoint(self.uri+"/"+str(frag).strip("/"))
