@@ -43,6 +43,7 @@ Usage:
                           - file://<rest of the uri>: a local directory
                           - gist://<rest of the uri>: a gist
                           - git://<rest of the uri>: a public git repo
+                          - http(s)://<rest of the uri>: a file on the web
 
     %mldb pyplugin <name> <uri>
                         Load a python plugin called <name> from <uri> 
@@ -52,6 +53,7 @@ Usage:
                           - file://<rest of the uri>: a local directory
                           - gist://<rest of the uri>: a gist
                           - git://<rest of the uri>: a public git repo
+                          - http(s)://<rest of the uri>: a file on the web
                           
     %mldb GET <route>
     %mldb DELETE <route>
