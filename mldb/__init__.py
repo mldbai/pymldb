@@ -65,10 +65,11 @@ Usage:
     <python code>
                         Run a python script in MLDB from the cell body.
     
-    %%mldb query <dataset>
+    %%mldb query
     <sql>
-                        Run an SQL-like query from the cell body on 
-                        <dataset> and return a pandas DataFrame.
+                        Run an SQL-like query from the cell body and return
+                        a pandas DataFrame. Dataset selection is done via
+                        the FROM clause.
     
     %%mldb GET <route>
     <json query params>
@@ -137,10 +138,10 @@ def json_to_dataframe(resp_json):
         df = pd.DataFrame()
     return df
 
-def run_query(ds, q):
+def run_query(q):
     global host
 
-    resp = requests.get(host+"/v1/datasets/"+ds+"/rawquery", params={"q": q})
+    resp = requests.get(host+"/v1/query", params={"q": q})
     
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)
@@ -209,10 +210,8 @@ def mldb(line, cell=None):
         elif len(parts) == 1 and parts[0] == "help":
             return print_usage_message()
 
-        elif (len(parts) > 2 and parts[0] == "query"):
-
-            ds = parts[1]
-            return run_query(ds, " ".join(parts[2:]))
+        elif (len(parts) > 1 and parts[0] == "query"):
+            return run_query(" ".join(parts[1:]))
 
         # We have something else
         else:
@@ -234,10 +233,8 @@ def mldb(line, cell=None):
             
             return handle_script_output(resp)
         
-        if (len(parts) == 2 and parts[0] == "query"):
-
-            _, ds = parts
-            return run_query(ds, cell)
+        if (len(parts) == 1 and parts[0] == "query"):
+            return run_query(cell)
 
         # perform
         elif (len(parts) == 2 and parts[0] in ["GET", "PUT", "POST"]):
