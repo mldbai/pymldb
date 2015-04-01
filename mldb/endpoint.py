@@ -37,18 +37,16 @@ class Endpoint():
         return requests.put(self.uri, **kwargs)
     
     @decorate_response
-    def put_json(self, payload, sync=True): 
-        return requests.put(self.uri, data=json.dumps(payload), 
-            params=dict(sync=str(sync).lower()))
+    def put_json(self, payload): 
+        return requests.put(self.uri, data=json.dumps(payload))
     
     @decorate_response
     def post(self, *args, **kwargs): 
         return requests.post(self.uri, **kwargs)
     
     @decorate_response
-    def post_json(self, payload, sync=True): 
-        return requests.post(self.uri, data=json.dumps(payload), 
-            params=dict(sync=str(sync).lower()))
+    def post_json(self, payload): 
+        return requests.post(self.uri, data=json.dumps(payload))
     
     @decorate_response
     def delete(self, *args, **kwargs): 

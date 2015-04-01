@@ -191,7 +191,7 @@ def mldb(line, cell=None):
             payload = {"type":"python", "params": {"address": parts[2]}}
             requests.delete(host+"/v1/plugins/" + name)
             resp = requests.put(host+"/v1/plugins/" + name,
-                             data=json.dumps(payload), params=dict(sync="true"))
+                             data=json.dumps(payload))
             return add_repr_html_to_response(resp)
 
         # perform
