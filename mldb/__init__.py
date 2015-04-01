@@ -234,7 +234,7 @@ def mldb(line, cell=None):
             return handle_script_output(resp)
         
         if (len(parts) == 1 and parts[0] == "query"):
-            return run_query(cell)
+            return run_query(cell.replace("\n", " ").strip())
 
         # perform
         elif (len(parts) == 2 and parts[0] in ["GET", "PUT", "POST"]):
