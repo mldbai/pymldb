@@ -36,6 +36,15 @@ Usage:
                         Extension comes pre-initialized with <uri> 
                         set to "http://localhost"
 
+    %mldb query <sql>
+                        Run an SQL-like query and return a pandas 
+                        DataFrame. Dataset selection is done via the 
+                        FROM clause.
+
+    %mldb loadcsv <dataset> <url>
+                        Create a dataset with id <dataset> from a CSV
+                        hosted at the HTTP url <url>.
+                        
     %mldb py <uri> <json args>
                         Run a python script named "main.py" from <uri>
                         and pass in <json args> as arguments.
@@ -73,6 +82,11 @@ Usage:
                         a pandas DataFrame. Dataset selection is done via
                         the FROM clause.
     
+    %mldb loadcsv <dataset>
+    <csv>
+                        Create a dataset with id <dataset> from a CSV
+                        in the cell body.
+                        
     %%mldb GET <route>
     <json query params>
                         HTTP GET request to <route>, cell body will be
@@ -113,7 +127,37 @@ def add_repr_html_to_response(resp):
     resp._repr_html_ = types.MethodType(_repr_html_, resp)
     return resp
 
+def load_csv(dataset, csv_input):
+
+    payload = {"args": [dataset, csv_input]}
+    payload["source"] = """
+import csv, urllib, StringIO
+if mldb.script.args[1].startswith("http"):
+    reader = csv.DictReader(open(urllib.urlretrieve(mldb.script.args[1])[0]))
+else:
+    reader = csv.DictReader(StringIO.StringIO(mldb.script.args[1]))
+
+dataset = mldb.create_dataset(dict(id=mldb.script.args[0], type="mutable"))
+for i, row in enumerate(reader):
+    values = []
+    row_name = i
+    for col in row:
+        if col == "":
+            row_name = row[col]
+        else:
+            values.append([col, row[col], 0])
+    dataset.record_row(row_name, values)
+dataset.commit()
+print "Success!"
+    """
+    resp = requests.post(host+"/v1/types/plugins/python/routes/run",
+                     data=json.dumps(payload))
+    return handle_script_output(resp)
+
 def handle_script_output(resp):
+    if resp.status_code != 200:
+        return add_repr_html_to_response(resp)
+    
     result = resp.json()
     if "out" in result:
         for o in result["out"]:
@@ -214,6 +258,9 @@ def mldb(line, cell=None):
 
         elif (len(parts) > 1 and parts[0] == "query"):
             return run_query(" ".join(parts[1:]))
+        
+        elif (len(parts) == 3 and parts[0] == "loadcsv"):
+            return load_csv(parts[1], parts[2])
 
         # We have something else
         else:
@@ -237,6 +284,9 @@ def mldb(line, cell=None):
         
         if (len(parts) == 1 and parts[0] == "query"):
             return run_query(cell.replace("\n", " ").strip())
+
+        if (len(parts) == 2 and parts[0] == "loadcsv"):
+            return load_csv(parts[1], cell)
 
         # perform
         elif (len(parts) == 2 and parts[0] in ["GET", "PUT", "POST"]):
