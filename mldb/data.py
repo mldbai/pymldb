@@ -4,7 +4,7 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-31 16:41:37
+# @Last Modified time: 2015-04-09 13:30:07
 # @File Name:          data.py
 
 
@@ -12,7 +12,7 @@ import pandas as pd
 import mldb
 import json
 from mldb.query import Query
-from mldb.index import Time
+from mldb.index import Time, Index
 import requests
 import logging
 import numpy as np
@@ -24,6 +24,7 @@ class BatFrame(object):
         self.dataset_url = dataset_url
         self.query = Query(dataset_url)
         self._time = Time(dataset_url)
+        self._index = Index(self)
 
     def __getitem__(self, val):
 
@@ -76,6 +77,11 @@ class BatFrame(object):
     def time(self):
         copy_time = self._time.copy()
         return copy_time.query.mergeQuery(self.Query)
+
+    @property
+    def ix(self):
+        copy_index = self._index.copy()
+        return copy_index
 
     def copy(self):
         bf = BatFrame(self.dataset_url)
@@ -192,6 +198,11 @@ class Column(object):
             col = self.copy()
             col.query.mergeQuery(val)
             return col
+        elif isinstance(val, str):
+            col = self.copy()
+            col.query.addWHERE("rowName()='{}'".format(val))
+            return col
+
 
     ####################
     #  Rich comparison  #
@@ -586,4 +597,3 @@ class Column(object):
         if rowCount is not None and rowCount > 40:
             print("{} rows".format(rowCount))
         return ""
-

@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-19 10:28:23
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-19 10:34:00
+# @Last Modified time: 2015-04-09 13:31:45
 # @File Name:          index.py
 
 from mldb.query import Query
@@ -24,3 +24,23 @@ class Time(object):
         copy_time = Time(self.dataset_url)
         copy_time = self.query.copy()
         return copy_time
+
+
+class Index(object):
+    """docstring for Index"""
+    def __init__(self, bf):
+        super(Index, self).__init__()
+        self._bf = bf
+
+    def copy(self):
+        copy_index = Index(self._bf.copy())
+        return copy_index
+
+    def __getitem__(self, val):
+        print("Index.__getitem__")
+        if isinstance(val, str):
+            copy_bf = self._bf.copy()
+            copy_bf.query.addWHERE("rowName()='{}'".format(val))
+            return copy_bf
+        else:
+            raise NotImplementedError()
