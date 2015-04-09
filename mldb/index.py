@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-19 10:28:23
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 13:31:45
+# @Last Modified time: 2015-04-09 14:44:44
 # @File Name:          index.py
 
 from mldb.query import Query
@@ -41,6 +41,14 @@ class Index(object):
         if isinstance(val, str):
             copy_bf = self._bf.copy()
             copy_bf.query.addWHERE("rowName()='{}'".format(val))
+            return copy_bf
+        elif isinstance(val, list):
+            copy_bf = self._bf.copy()
+            where = []
+            for v in val:
+                where.append("rowName()='{}'".format(v))
+
+            copy_bf.query.addWHERE("({})".format(" OR ".join(where)))
             return copy_bf
         else:
             raise NotImplementedError()
