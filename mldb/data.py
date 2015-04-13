@@ -4,7 +4,7 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 13:30:07
+# @Last Modified time: 2015-04-09 16:53:21
 # @File Name:          data.py
 
 
@@ -55,7 +55,7 @@ class BatFrame(object):
             return bf
         elif isinstance(val, Column):
             bf = self.copy()
-            bf.query.addWHERE("{}".format(val.execution_name))
+            bf.query.addWHERE("({})".format(val.execution_name))
             return bf
 
     @property
@@ -200,7 +200,7 @@ class Column(object):
             return col
         elif isinstance(val, str):
             col = self.copy()
-            col.query.addWHERE("rowName()='{}'".format(val))
+            col.query.addWHERE("(rowName()='{}')".format(val))
             return col
 
 
@@ -225,17 +225,17 @@ class Column(object):
         ops and concatenate something else
         """
         if isinstance(value, Column):
-            self.query.addWHERE("{}{}{}".format(
+            self.query.addWHERE("(({}){}({}))".format(
                 self.execution_name,
                 operator,
                 value.execution_name))
         elif isinstance(value, str):
-            self.query.addWHERE("{}{}\'{}\'".format(
+            self.query.addWHERE("(({}){}\'{}\')".format(
                 self.execution_name,
                 operator,
                 value))
         else:
-            self.query.addWHERE("{}{}{}".format(
+            self.query.addWHERE("(({}){}({}))".format(
                 self.execution_name,
                 operator,
                 value))
@@ -367,11 +367,13 @@ class Column(object):
         right = value
 
         col.query.removeSELECT(left)
-        if isinstance(value, Column):
+        if isinstance(right, Column):
             right = value.execution_name
             col.query.removeSELECT(right)
+        elif isinstance(right, Query):
+            right = right.WHERE
 
-        col.query.addWHERE('{} OR {}'.format(left, right))
+        col.query.addWHERE('(({}) OR ({}))'.format(left, right))
         return col.query
 
     def __and__(self, value):
@@ -380,11 +382,13 @@ class Column(object):
         right = value
 
         col.query.removeSELECT(left)
-        if isinstance(value, Column):
+        if isinstance(right, Column):
             right = value.execution_name
             col.query.removeSELECT(right)
+        elif isinstance(right, Query):
+            right = right.WHERE
 
-        col.query.addWHERE('{} AND {}'.format(left, right))
+        col.query.addWHERE('(({}) AND ({}))'.format(left, right))
 
         return col.query
 
@@ -394,11 +398,13 @@ class Column(object):
         right = value
 
         col.query.removeSELECT(left)
-        if isinstance(value, Column):
+        if isinstance(right, Column):
             right = value.execution_name
             col.query.removeSELECT(right)
+        elif isinstance(right, Query):
+            right = right.WHERE
 
-        col.query.addWHERE('{} AND {}'.format(right, left))
+        col.query.addWHERE('(({}) AND ({}))'.format(right, left))
 
     def __ror__(self, value):
         col = self.copy()
@@ -406,11 +412,13 @@ class Column(object):
         right = value
 
         col.query.removeSELECT(left)
-        if isinstance(value, Column):
+        if isinstance(right, Column):
             right = value.execution_name
             col.query.removeSELECT(right)
+        elif isinstance(right, Query):
+            right = right.WHERE
 
-        col.query.addWHERE('{} AND {}'.format(right, left))
+        col.query.addWHERE('(({}) OR ({}))'.format(right, left))
         return col.query
 
     #################################

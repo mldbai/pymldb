@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-06 14:53:37
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-03-20 15:57:30
+# @Last Modified time: 2015-04-09 16:54:58
 # @File Name:          query.py
 
 
@@ -22,7 +22,7 @@ class Query(object):
     def __init__(self, dataset_url):
         self.dataset_url = dataset_url
         self.SELECT = Counter()
-        self.WHERE = list()
+        self.WHERE = None # list()
         self.GROUPBY = list()
         self.OFFSET = None
         self.LIMIT = None
@@ -46,13 +46,24 @@ class Query(object):
     def mergeSELECT(self, query):
         self.SELECT = self.SELECT + query.SELECT
 
-    def addWHERE(self, where):
-        # value can be None in case the where is like col1 is null
-        # is null will be in op
-        self.WHERE.append(where)
+    def addWHERE(self, where, boolean=None):
+        if where is None:
+            return
 
-    def mergeWHERE(self, query):
-        self.WHERE.extend(query.WHERE)
+        if self.WHERE is None:
+            self.WHERE = where
+        else:
+            # if boolean is None:
+            #     raise RuntimeError("Must provide boolean instruction to WHERE")
+            if boolean != "OR" and boolean != "AND":
+                raise RuntimeError("Boolean instruction must OR or AND")
+            self.WHERE = "({} {} {})".format(self.WHERE, boolean, where)
+
+        # self.WHERE.append(where)
+
+    def mergeWHERE(self, query, how):
+        self.addWHERE(query.WHERE, how)
+        # self.WHERE.extend(query.WHERE)
 
     def addGROUPBY(self, value):
         self.GROUPBY.append(str(value))
@@ -92,9 +103,9 @@ class Query(object):
     def mergeORDERBY(self, query):
         self.ORDERBY.extend(query.ORDERBY)
 
-    def mergeQuery(self, query):
+    def mergeQuery(self, query, how=None):
         self.mergeSELECT(query)
-        self.mergeWHERE(query)
+        self.mergeWHERE(query, how)
         self.mergeGROUPBY(query)
         self.mergeORDERBY(query)
 
@@ -120,8 +131,9 @@ class Query(object):
         else:
             data["select"] = ",".join(self.SELECT.keys())
 
-        if len(self.WHERE) > 0:
-            data["where"] = " ".join(self.WHERE)
+        if self.WHERE is not None:
+            # data["where"] = " ".join(self.WHERE)
+            data["where"] = self.WHERE
         if len(self.GROUPBY) > 0:
             data["groupBy"] = ",".join(self.GROUPBY)
         if self.OFFSET is not None:
@@ -165,15 +177,17 @@ class Query(object):
 
     def __or__(self, value):
         if isinstance(value, Query):
-            self.addWHERE('OR')
-            self.mergeQuery(value)
-        return self
+            query = self.copy()
+            # self.addWHERE('OR')
+            query.mergeQuery(value, "OR")
+        return query
 
     def __and__(self, value):
         if isinstance(value, Query):
-            self.addWHERE('AND')
-            self.mergeQuery(value)
-        return self
+            query = self.copy()
+            # self.addWHERE('AND')
+            query.mergeQuery(value, "AND")
+        return query
 
     def __rand__(self, value):
         raise NotImplementedError()
