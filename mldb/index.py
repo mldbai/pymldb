@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-19 10:28:23
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 14:44:44
+# @Last Modified time: 2015-04-14 09:42:54
 # @File Name:          index.py
 
 from mldb.query import Query
@@ -50,5 +50,15 @@ class Index(object):
 
             copy_bf.query.addWHERE("({})".format(" OR ".join(where)))
             return copy_bf
+        elif isinstance(val, tuple):
+            if len(val) != 2:
+                msg = "Too many indexers"
+                raise IndexError(msg)
+
+            row_index = val[0]
+            col_index = val[1]
+            row_index_bf = self._bf.ix[row_index]
+            col_index_bf = row_index_bf[col_index]
+            return col_index_bf
         else:
             raise NotImplementedError()
