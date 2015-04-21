@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-19 10:28:23
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-14 09:42:54
+# @Last Modified time: 2015-04-21 09:05:54
 # @File Name:          index.py
 
 from mldb.query import Query
@@ -37,7 +37,6 @@ class Index(object):
         return copy_index
 
     def __getitem__(self, val):
-        print("Index.__getitem__")
         if isinstance(val, str):
             copy_bf = self._bf.copy()
             copy_bf.query.addWHERE("rowName()='{}'".format(val))
