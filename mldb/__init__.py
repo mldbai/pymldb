@@ -69,6 +69,12 @@ Usage:
                         HTTP GET/DELETE request to <route>. <route> should
                         start with a '/'.
                         
+    %mldb PUT <route> <json>
+    %mldb POST <route> <json>
+                        HTTP PUT/POST request to <route>, <json> will
+                        be sent as JSON payload. <route> should start
+                        with a '/'.
+       
                         
   Cell magic functions:
 
@@ -252,6 +258,19 @@ def mldb(line, cell=None):
                 
             return add_repr_html_to_response(resp)
 
+        # perform 
+        elif (len(parts) > 2 and parts[0] in ["PUT", "POST"]):
+
+            verb = parts[0]
+            uri = parts[1]
+            payload = json.loads(" ".join(parts[2:]))
+            if verb == "PUT":
+                resp = requests.put(host+uri, data=json.dumps(payload))
+            elif verb == "POST":
+                resp = requests.post(host+uri, data=json.dumps(payload))
+                
+            return add_repr_html_to_response(resp)
+
         # help
         elif len(parts) == 1 and parts[0] == "help":
             return print_usage_message()
@@ -294,6 +313,10 @@ def mldb(line, cell=None):
             verb, uri = parts
             payload = json.loads(cell)
             if verb == "GET":
+                for k in payload:
+                    if isinstance(payload[k], dict):
+                        payload[k] = json.dumps(payload[k])
+                        
                 resp = requests.get(host+uri, params=payload)
             elif verb == "PUT":
                 resp = requests.put(host+uri, data=json.dumps(payload))
