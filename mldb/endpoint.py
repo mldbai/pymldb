@@ -30,7 +30,9 @@ class Endpoint():
     
     @decorate_response
     def get_query(self, *args, **kwargs): 
-        return requests.get(self.uri, params=dict(**kwargs))
+        return requests.get(self.uri, 
+            params= {k: (json.dumps(v) if isinstance(v, dict) else v) 
+                 for k,v in dict(**kwargs).iteritems() })
     
     @decorate_response
     def put(self, *args, **kwargs): 

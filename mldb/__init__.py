@@ -18,6 +18,7 @@ class PygmentsStyle(Style):
     }
 
 host = "http://localhost"
+print "mldb magic initialized with host as " + host
 
 ###############################################################################
 # Functions used by the cell and line magics
@@ -174,31 +175,17 @@ def handle_script_output(resp):
     if "return" in result:
         return result["return"]
 
-def json_to_dataframe(resp_json):
-    d = []
-    for row in resp_json:
-        tmp = {}
-        tmp["rowName"] = row["rowName"]
-        if "columns" in row:
-            for column in row["columns"]:
-                tmp[column[0]] = column[1]
-        d.append(tmp)
-    if len(d) > 0:
-        df = pd.DataFrame(d)
-        df.set_index('rowName', inplace=True)
-    else:
-        df = pd.DataFrame()
-    return df
-
 def run_query(q):
     global host
 
-    resp = requests.get(host+"/v1/query", params={"q": q})
+    resp = requests.get(host+"/v1/query", 
+        params={"q": q, "format": "aos"})
     
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)
     else:
-        return json_to_dataframe(resp.json())
+        return pd.DataFrame.from_records(resp.json(), 
+            index="_rowName")
 
 
 ###############################################################################
@@ -222,6 +209,7 @@ def mldb(line, cell=None):
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
             host = parts[1].strip("/")
+            print "mldb magic initialized with host as " + host
             return
 
         # py or js: put a javascript or python script from an uri
