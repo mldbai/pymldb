@@ -70,6 +70,10 @@ Usage:
                         HTTP GET/DELETE request to <route>. <route> should
                         start with a '/'.
                         
+    %mldb GET <route> <json query params>
+                        HTTP GET request to <route>, JSON will be used to 
+                        create query string. <route> should start with a '/'.
+                        
     %mldb PUT <route> <json>
     %mldb POST <route> <json>
                         HTTP PUT/POST request to <route>, <json> will
@@ -144,7 +148,7 @@ if mldb.script.args[1].startswith("http"):
 else:
     reader = csv.DictReader(StringIO.StringIO(mldb.script.args[1]))
 
-dataset = mldb.create_dataset(dict(id=mldb.script.args[0], type="mutable"))
+dataset = mldb.create_dataset(dict(id=mldb.script.args[0], type="beh_mutable"))
 for i, row in enumerate(reader):
     values = []
     row_name = i
@@ -247,11 +251,17 @@ def mldb(line, cell=None):
             return add_repr_html_to_response(resp)
 
         # perform 
-        elif (len(parts) > 2 and parts[0] in ["PUT", "POST"]):
+        elif (len(parts) > 2 and parts[0] in ["GET", "PUT", "POST"]):
 
             verb = parts[0]
             uri = parts[1]
             payload = json.loads(" ".join(parts[2:]))
+            if verb == "GET":
+                for k in payload:
+                    if isinstance(payload[k], dict):
+                        payload[k] = json.dumps(payload[k])
+                        
+                resp = requests.get(host+uri, params=payload)
             if verb == "PUT":
                 resp = requests.put(host+uri, data=json.dumps(payload))
             elif verb == "POST":
