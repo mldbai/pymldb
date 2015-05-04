@@ -4,7 +4,7 @@
 # @Email:              atremblay@datacratic.com
 # @Date:               2015-03-06 14:53:37
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 16:54:58
+# @Last Modified time: 2015-05-04 15:50:10
 # @File Name:          query.py
 
 
@@ -27,6 +27,7 @@ class Query(object):
         self.OFFSET = None
         self.LIMIT = None
         self.ORDERBY = list()
+        self.other = {'format': 'aos'}
 
     def addSELECT(self, obj):
         logging.debug("Adding SELECT {}".format(obj))
@@ -123,16 +124,15 @@ class Query(object):
 
     def buildQuery(self):
         data = {}
-        # print("Building query")
-        # print(self.SELECT, len(self.SELECT))
+
         if len(self.SELECT) == 0:
-            # print("Replacing SELECT with *")
+
             data["select"] = '*'
         else:
             data["select"] = ",".join(self.SELECT.keys())
 
         if self.WHERE is not None:
-            # data["where"] = " ".join(self.WHERE)
+
             data["where"] = self.WHERE
         if len(self.GROUPBY) > 0:
             data["groupBy"] = ",".join(self.GROUPBY)
@@ -140,9 +140,11 @@ class Query(object):
             data["offset"] = self.OFFSET
         if self.LIMIT is not None:
             data["limit"] = self.LIMIT
+        # self.ORDERBY.append('rowHash()')
         if len(self.ORDERBY) > 0:
             data["orderBy"] = ",".join(self.ORDERBY)
 
+        data.update(self.other)
         return data
 
     def executeQuery(self):

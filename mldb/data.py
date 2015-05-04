@@ -4,11 +4,12 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 16:53:21
+# @Last Modified time: 2015-05-04 16:16:43
 # @File Name:          data.py
 
 
-import pandas as pd
+# import pandas as pd
+from pandas import DataFrame
 import mldb
 import json
 from mldb.query import Query
@@ -38,15 +39,22 @@ class BatFrame(object):
             bf.query.mergeQuery(val)
             return bf
         elif isinstance(val, slice):
-            start = val.start
-            stop = val.stop
-            # step = val.step
             bf = self.copy()
+
+            start = val.start
+            if start is None:
+                start = 0
+            bf.query.setOFFSET(start)
+
+            stop = val.stop
+            if stop is not None and stop < start:
+                raise IndexError("Stop cannot be smaller than start")
+            # step = val.step
+
             # bf.query.addSELECT('*')
-            if start is not None:
-                bf.query.setOFFSET(start)
+
             if stop is not None:
-                bf.query.setLIMIT(stop)
+                bf.query.setLIMIT(stop-start)
             return bf
         elif isinstance(val, list):
             bf = self.copy()
@@ -71,7 +79,7 @@ class BatFrame(object):
         bf.query.addSELECT("rowName()")
 
         result = bf.query.executeQuery()
-        return [row['rowName'] for row in result]
+        return [row['_rowName'] for row in result]
 
     @property
     def time(self):
@@ -91,18 +99,13 @@ class BatFrame(object):
     def toPandas(self):
         result = self.query.executeQuery()
         logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
-        d = []
-        for row in result:
-            tmp = {"rowName": row["rowName"]}
-            if "columns" in row:
-                for column in row["columns"]:
-                    tmp[column[0]] = column[1]
-            d.append(tmp)
-        if len(d) > 0:
-            df = pd.DataFrame(d)
-            df.set_index('rowName', inplace=True)
-        else:
-            df = pd.DataFrame()
+        df = DataFrame.from_records(result)
+        if df.shape[0] == 0:
+            return df
+
+        df.set_index('_rowName', inplace=True)
+        df.index.name = ['row']
+
         return df
 
     def head(self, num_rows=5):
@@ -170,29 +173,36 @@ class Column(object):
     @property
     def values(self):
         result = self.query.executeQuery()
-        values = []
-        for row in result:
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
+        print("ASDFADFASDFADGASDG {}".format(self.query))
+        # print(self.query)
+        # values = []
 
-        return np.array(values)
+        keys = result[0].keys()
+        if len(keys) != 2:
+            raise RuntimeError(
+                "Expected to have one column for value and "
+                "another for row name. Got something else")
+
+        i = keys.index('_rowName')
+        i = abs(i - 1)
+        key = keys[i]
+
+        return np.array([row[key] for row in result])
+
 
     def __getitem__(self, val):
 
         if isinstance(val, slice):
             start = val.start
             stop = val.stop
+            if stop < val:
+                raise IndexError("Stop cannot be smaller than start")
             # step = val.step
             col = self.copy()
             if start is not None:
                 col.query.setOFFSET(start)
             if stop is not None:
-                col.query.setLIMIT(stop)
+                col.query.setLIMIT(stop-start)
             return col
         elif isinstance(val, Query):
             col = self.copy()
@@ -478,41 +488,47 @@ class Column(object):
     ###########
 
     def __iter__(self):
-        result = self.query.executeQuery()
-        values = []
-        for row in result:
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
+        values = self.values
 
         i = 0
         while i < len(values):
             yield values[i]
             i += 1
 
-    def max(self):
+    def _min_max(self, min_or_max):
         copy = self.copy()
         copy.query.removeSELECT("{}".format(copy.execution_name))
-        copy.execution_name = "max({})".format(self.execution_name)
+
+        if min_or_max == 'min':
+            copy.execution_name = "min({})".format(self.execution_name)
+        elif min_or_max == 'max':
+            copy.execution_name = "max({})".format(self.execution_name)
+
         copy.query.addSELECT(copy.execution_name)
         copy.query.addGROUPBY(1)
-
         result = copy.query.executeQuery()
-        return result[0]['columns'][0][1]
+
+        keys = result[0].keys()
+        if len(keys) != 2:
+            raise RuntimeError(
+                "Expected to have one column for value and "
+                "another for row name. Got something else")
+
+        i = keys.index('_rowName')
+        i = abs(i - 1)
+        key = keys[i]
+
+
+        return result[0][key]
+
+    def max(self):
+        r = self._min_max('max')
+        return r
+
 
     def min(self):
-        copy = self.copy()
-        copy.query.removeSELECT("{}".format(copy.execution_name))
-        copy.execution_name = "min({})".format(self.execution_name)
-        copy.query.addSELECT(copy.execution_name)
-        copy.query.addGROUPBY(1)
+        return self._min_max('min')
 
-        result = copy.query.executeQuery()
-        return result[0]['columns'][0][1]
 
     def copy(self):
         name = self.name[1:-1]  # Removing the surrounding ''
@@ -574,23 +590,16 @@ class Column(object):
     def toPandas(self):
         result = self.query.executeQuery()
         logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
-        values = []
-        rowName = []
-        for row in result:
-            rowName.append(row["rowName"])
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
 
-        if len(values) > 0:
-            s = pd.Series(values, index=rowName)
-        else:
-            s = pd.Series()
-        return s
+        df = DataFrame.from_records(result)
+        df.set_index('_rowName', inplace=True)
+        df.index.name = ['row']
+
+        if df.shape[1] != 1:
+            raise RuntimeError("One column should be returned")
+
+        col = df.columns[0]
+        return df[col]
 
     def __repr__(self):
         col = self.copy()
