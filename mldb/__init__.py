@@ -148,7 +148,7 @@ if mldb.script.args[1].startswith("http"):
 else:
     reader = csv.DictReader(StringIO.StringIO(mldb.script.args[1]))
 
-dataset = mldb.create_dataset(dict(id=mldb.script.args[0], type="beh_mutable"))
+dataset = mldb.create_dataset(dict(id=mldb.script.args[0], type="beh.mutable"))
 for i, row in enumerate(reader):
     values = []
     row_name = i
