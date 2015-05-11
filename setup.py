@@ -53,8 +53,8 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy',
-                      'pandas',
-		      'requests',
+    install_requires=['numpy==1.9.2',
+                      'pandas==0.16.0',
+		      'requests[security]==2.6',
 		     ],
 )
