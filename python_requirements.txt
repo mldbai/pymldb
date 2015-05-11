@@ -1,4 +1,4 @@
-numpy
-pandas
-requests
+numpy==1.9.2
+pandas==0.16.0
+requests[security]==2.6
 
