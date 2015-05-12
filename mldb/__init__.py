@@ -271,8 +271,7 @@ def mldb(line, cell=None):
             if verb == "GET":		
                 for k in payload:		
                     if isinstance(payload[k], dict):		
-                        payload[k] = json.dumps(payload[k])		
-                        		
+                        payload[k] = json.dumps(payload[k])
                 resp = requests.get(host+uri, params=payload)
             elif verb == "PUT":
                 resp = requests.put(host+uri, data=json.dumps(payload))
