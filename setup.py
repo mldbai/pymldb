@@ -22,7 +22,8 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.1a1',
+    # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
+    version='0.1.0',
 
     description='Python interface to MLDB',
     long_description=long_description,
@@ -53,8 +54,8 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy==1.9.2',
-                      'pandas==0.16.0',
-		      'requests[security]==2.6',
+    install_requires=['numpy',
+                      'pandas',
+		      'requests[security]>=2.6',
 		     ],
 )
