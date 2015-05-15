@@ -6,7 +6,7 @@ def decorate_response(fn):
         return mldb.add_repr_html_to_response(fn(*args, **kwargs))
     return inner
 
-class Endpoint():
+class Resource():
     def __init__(self, uri="http://localhost"):
         if not uri.startswith("http"): 
             raise Exception("URIs must start with 'http'")
@@ -19,10 +19,10 @@ class Endpoint():
         return self.uri
     
     def __call__(self, frag):
-        return Endpoint(self.uri+"/"+str(frag).strip("/"))
+        return Resource(self.uri+"/"+str(frag).strip("/"))
                                               
     def __getattr__(self, frag): 
-        return Endpoint(self.uri+"/"+str(frag).strip("/"))
+        return Resource(self.uri+"/"+str(frag).strip("/"))
     
     @decorate_response
     def get(self, *args, **kwargs): 
