@@ -18,7 +18,6 @@ class PygmentsStyle(Style):
     }
 
 host = "http://localhost"
-print "mldb magic initialized with host as " + host
 
 ###############################################################################
 # Functions used by the cell and line magics
@@ -345,6 +344,7 @@ def mldb(line, cell=None):
 ###############################################################################
 # Load and unload the extensions
 def load_ipython_extension(ipython, *args):
+    print "mldb magic initialized with host as " + host
     ipython.register_magic_function(mldb, 'line_cell')
 
 def unload_ipython_extension(ipython):
