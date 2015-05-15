@@ -6,7 +6,7 @@ def decorate_response(fn):
         return mldb.add_repr_html_to_response(fn(*args, **kwargs))
     return inner
 
-class Resource():
+class Resource(object):
     def __init__(self, uri="http://localhost"):
         if not uri.startswith("http"): 
             raise Exception("URIs must start with 'http'")
