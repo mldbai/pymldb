@@ -89,6 +89,8 @@ class BatFrame(object):
     def toPandas(self):
         result = self.query.executeQuery(format="aos")
         logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
+        if len(result) == 0:
+            return pd.DataFrame()
         return pd.DataFrame.from_records(result, index="_rowName")
 
     def head(self, num_rows=5):
