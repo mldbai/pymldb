@@ -68,10 +68,8 @@ class BatFrame(object):
     def rows(self):
         """Returns a numpy array of the rows name"""
         bf = self.copy()
-        bf.query.addSELECT("rowName()")
-
-        result = bf.query.executeQuery()
-        return [row['rowName'] for row in result]
+        result = bf.query.executeQuery(format="soa")
+        return result["_rowName"]
 
     @property
     def time(self):
@@ -89,21 +87,9 @@ class BatFrame(object):
         return bf
 
     def toPandas(self):
-        result = self.query.executeQuery()
+        result = self.query.executeQuery(format="aos")
         logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
-        d = []
-        for row in result:
-            tmp = {"rowName": row["rowName"]}
-            if "columns" in row:
-                for column in row["columns"]:
-                    tmp[column[0]] = column[1]
-            d.append(tmp)
-        if len(d) > 0:
-            df = pd.DataFrame(d)
-            df.set_index('rowName', inplace=True)
-        else:
-            df = pd.DataFrame()
-        return df
+        return pd.DataFrame.from_records(result, index="_rowName")
 
     def head(self, num_rows=5):
         bf = self.copy()
@@ -169,18 +155,11 @@ class Column(object):
 
     @property
     def values(self):
-        result = self.query.executeQuery()
-        values = []
-        for row in result:
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
-
-        return np.array(values)
+        result = self.query.executeQuery(format="soa")
+        if len(result) > 2:
+            raise RuntimeError("Only one column should be returned")
+        colName = [x for x in result.keys() if x != "_rowName"][0]
+        return np.array(result[colName])
 
     def __getitem__(self, val):
 
@@ -478,16 +457,11 @@ class Column(object):
     ###########
 
     def __iter__(self):
-        result = self.query.executeQuery()
-        values = []
-        for row in result:
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
+        result = self.query.executeQuery(format="soa")
+        if len(result) > 2:
+            raise RuntimeError("Only one column should be returned")
+        colName = [x for x in result.keys() if x != "_rowName"][0]
+        values = result[colName]
 
         i = 0
         while i < len(values):
@@ -501,8 +475,8 @@ class Column(object):
         copy.query.addSELECT(copy.execution_name)
         copy.query.addGROUPBY(1)
 
-        result = copy.query.executeQuery()
-        return result[0]['columns'][0][1]
+        result = copy.query.executeQuery(format="table")
+        return result[1][1]
 
     def min(self):
         copy = self.copy()
@@ -511,8 +485,8 @@ class Column(object):
         copy.query.addSELECT(copy.execution_name)
         copy.query.addGROUPBY(1)
 
-        result = copy.query.executeQuery()
-        return result[0]['columns'][0][1]
+        result = copy.query.executeQuery(format="table")
+        return result[1][1]
 
     def copy(self):
         name = self.name[1:-1]  # Removing the surrounding ''
@@ -548,18 +522,11 @@ class Column(object):
             response = requests.get(url)
             return json.loads(response.content)
         else:
-            result = self.query.executeQuery()
-            values = set()
-            for row in result:
-                if "columns" in row and len(row["columns"]) > 0:
-                    columns = row["columns"]
-                    if len(columns) != 1:
-                        raise RuntimeError("Only one column should be returned")
-                    values.add(columns[0][1])
-                else:
-                    values.add(None)
-
-        return values
+            result = self.query.executeQuery(format="soa")
+            if len(result) > 2:
+                raise RuntimeError("Only one column should be returned")
+            colName = [x for x in result.keys() if x != "_rowName"][0]
+            return set(result[colName])
 
     def sort(self, ascending=True):
         col = self.copy()
@@ -572,20 +539,13 @@ class Column(object):
         return col
 
     def toPandas(self):
-        result = self.query.executeQuery()
+        result = self.query.executeQuery(format="soa")
         logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
-        values = []
-        rowName = []
-        for row in result:
-            rowName.append(row["rowName"])
-            if "columns" in row and len(row["columns"]) > 0:
-                columns = row["columns"]
-                if len(columns) != 1:
-                    raise RuntimeError("Only one column should be returned")
-                values.append(columns[0][1])
-            else:
-                values.append(None)
-
+        if len(result) > 2:
+            raise RuntimeError("Only one column should be returned")
+        colName = [x for x in result.keys() if x != "_rowName"][0]
+        values = result[colName]
+        rowName = result["_rowName"]
         if len(values) > 0:
             s = pd.Series(values, index=rowName)
         else:

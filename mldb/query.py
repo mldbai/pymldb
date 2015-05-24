@@ -145,14 +145,14 @@ class Query(object):
 
         return data
 
-    def executeQuery(self):
+    def executeQuery(self, format):
 
         query = self.buildQuery()
+        query["format"] = format
         logging.debug("REST params\n{}".format(json.dumps(query)))
 
         select_url = self.dataset_url + "/query"
 
-        the_page = {}
         try:
             # logging.info(select_url)
             response = requests.get(select_url, params=query)
@@ -170,10 +170,9 @@ class Query(object):
             logging.error(traceback.format_exc())
 
         try:
-            the_page = json.loads(response.content)
+            return response.json()
         except:
-            pass
-        return the_page
+            return {}
 
     def __or__(self, value):
         if isinstance(value, Query):
