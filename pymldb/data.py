@@ -9,7 +9,6 @@
 
 
 import pandas as pd
-import mldb
 import json
 from query import Query
 from index import Time, Index
@@ -32,7 +31,7 @@ class BatFrame(object):
             col = Column(val, self.dataset_url)
             col.query.mergeQuery(self.query)
             return col
-        elif isinstance(val, mldb.query.Query):
+        elif isinstance(val, Query):
             bf = self.copy()
             # bf.query.addSELECT('*')
             bf.query.mergeQuery(val)
