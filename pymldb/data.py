@@ -11,8 +11,8 @@
 import pandas as pd
 import mldb
 import json
-from mldb.query import Query
-from mldb.index import Time, Index
+from query import Query
+from index import Time, Index
 import requests
 import logging
 import numpy as np
