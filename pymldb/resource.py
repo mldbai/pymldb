@@ -1,10 +1,6 @@
-import requests, json, mldb
+import requests, json
+from util import decorate_response
 
-
-def decorate_response(fn):
-    def inner(*args, **kwargs):
-        return mldb.add_repr_html_to_response(fn(*args, **kwargs))
-    return inner
 
 class Resource(object):
     def __init__(self, uri="http://localhost"):
