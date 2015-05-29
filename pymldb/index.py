@@ -7,7 +7,7 @@
 # @Last Modified time: 2015-04-21 09:05:54
 # @File Name:          index.py
 
-from mldb.query import Query
+from query import Query
 
 
 class Time(object):
