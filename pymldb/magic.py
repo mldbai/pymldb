@@ -190,7 +190,7 @@ def dispatcher(line, cell=None):
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
             host = parts[1].strip("/")
-            print "mldb magic initialized with host as " + host
+            print "%mldb magic initialized with host as " + host
             return
 
         # py or js: put a javascript or python script from an uri
