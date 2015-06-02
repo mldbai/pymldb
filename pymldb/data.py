@@ -4,7 +4,7 @@
 # @Email: atremblay@datacratic.com
 # @Date:   2015-01-07 15:45:01
 # @Last Modified by:   Alexis Tremblay
-# @Last Modified time: 2015-04-09 16:53:21
+# @Last Modified time: 2015-06-02 08:32:09
 # @File Name:          data.py
 
 
@@ -118,6 +118,19 @@ class BatFrame(object):
                 sort = "DESC"
             bf.query.addORDERBY("\"{}\" {}".format(by, sort))
         return bf
+
+    @property
+    def shape(self):
+        """
+        Returns (rowCount, valueCount)
+        """
+        bf = self.copy()
+        response = requests.get(bf.dataset_url)
+        content = json.loads(response.content)
+        rowCount = content['status']['rowCount']
+        valueCount = content['status']['valueCount']
+
+        return (rowCount, valueCount)
 
     def __repr__(self):
         bf = self.copy()
