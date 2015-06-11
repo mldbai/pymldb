@@ -165,8 +165,9 @@ def run_query(q):
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)
     else:
-        return pd.DataFrame.from_records(resp.json(), 
-            index="_rowName")
+        df = pd.DataFrame.from_records(resp.json())
+        if len(df): df.set_index("_rowName")
+        return df
 
 
 ###############################################################################

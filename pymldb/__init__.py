@@ -19,7 +19,9 @@ class Connection(object):
         resp = self.v1.query.get(params=dict(q=sql, format="aos"))
         if resp.status_code != 200:
             return resp
-        return pd.DataFrame.from_records(resp.json(), index="_rowName")
+        df = pd.DataFrame.from_records(resp.json())
+        if len(df): df.set_index("_rowName")
+        return df
     
     def batframe(self, dataset_id):
         return data.BatFrame(self.v1.datasets(dataset_id).uri)
