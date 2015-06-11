@@ -30,7 +30,7 @@ class Connection(object):
 # IPython Magic system
 
 def load_ipython_extension(ipython, *args):
-    from magic import dispatcher
+    from pymldb.magic import dispatcher
     dispatcher("init http://localhost")
     ipython.register_magic_function(dispatcher, 'line_cell', magic_name="mldb")
 
