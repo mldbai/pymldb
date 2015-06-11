@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Datacratic. All rights reserved.
 #
 
-import resource, data
+from pymldb import resource, data
 import pandas as pd
 
 

@@ -36,8 +36,3 @@ def add_repr_html_to_response(resp):
     resp._repr_html_ = types.MethodType(_repr_html_, resp)
     return resp
 
-
-def decorate_response(fn):
-    def inner(*args, **kwargs):
-        return add_repr_html_to_response(fn(*args, **kwargs))
-    return inner

@@ -4,7 +4,7 @@
 #
 
 import requests, json
-from util import add_repr_html_to_response
+from pymldb.util import add_repr_html_to_response
 import pandas as pd
 
 host = "http://localhost"

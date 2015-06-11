@@ -10,8 +10,8 @@
 
 import pandas as pd
 import json
-from query import Query
-from index import Time, Index
+from pymldb.query import Query
+from pymldb.index import Time, Index
 import requests
 import logging
 import numpy as np
