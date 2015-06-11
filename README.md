@@ -7,6 +7,6 @@ This library provides an `Resource` utility class, a DataFrame workalike called 
 
 [More documentation available on mldb.ai](http://mldb.ai/doc/#builtin/Notebooks.md.html).
 
-## Installation
+## Installation (note: Python 3.x is not supported!)
 
 `pip install pymldb`
