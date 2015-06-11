@@ -47,7 +47,7 @@ class Resource(object):
     def get_query(self, *args, **kwargs): 
         return requests.get(self.uri, 
             params= {k: (json.dumps(v) if isinstance(v, dict) else v) 
-                 for k,v in dict(**kwargs).iteritems() })
+                 for k,v in kwargs.items() })
     
     @decorate_response
     def put(self, *args, **kwargs): 

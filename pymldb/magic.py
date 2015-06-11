@@ -109,9 +109,9 @@ Usage:
                         with a '/'.
 """
     if unknown:
-        print "Unknown magic..."
-        print ""
-    print msg
+        print("Unknown magic...")
+        print("")
+    print(msg)
 
 
 
@@ -149,10 +149,10 @@ def handle_script_output(resp):
     result = resp.json()
     if "out" in result:
         for o in result["out"]:
-            print o[2]
+            print(o[2])
     if "exception" in result:
         for e in result["exception"]["stack"]:
-            print e 
+            print(e) 
     if "return" in result:
         return result["return"]
 
@@ -191,7 +191,7 @@ def dispatcher(line, cell=None):
             if not parts[1].startswith("http"):
                 raise Exception("URI must start with 'http'")
             host = parts[1].strip("/")
-            print "%mldb magic initialized with host as " + host
+            print("%mldb magic initialized with host as " + host)
             return
 
         # py or js: put a javascript or python script from an uri
