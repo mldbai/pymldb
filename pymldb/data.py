@@ -9,7 +9,6 @@
 
 
 import pandas as pd
-import json
 from pymldb.query import Query
 from pymldb.index import Time, Index
 import requests
@@ -60,8 +59,7 @@ class BatFrame(object):
     @property
     def columns(self):
         """Returns a numpy array of the columns name"""
-        response = requests.get(self.dataset_url + '/columns')
-        return json.loads(response.content)
+        return requests.get(self.dataset_url + '/columns').json()
 
     @property
     def rows(self):
@@ -87,7 +85,6 @@ class BatFrame(object):
 
     def toPandas(self):
         result = self.query.executeQuery(format="aos")
-        logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
         if len(result) == 0:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result, index="_rowName")
@@ -125,8 +122,7 @@ class BatFrame(object):
         Returns (rowCount, valueCount)
         """
         bf = self.copy()
-        response = requests.get(bf.dataset_url)
-        content = json.loads(response.content)
+        content = requests.get(bf.dataset_url).json()
         rowCount = content['status']['rowCount']
         valueCount = content['status']['valueCount']
 
@@ -136,9 +132,9 @@ class BatFrame(object):
         bf = self.copy()
         bf.query.setLIMIT(40)
         print(bf.toPandas())
-        response = requests.get(bf.dataset_url)
+        response = requests.get(bf.dataset_url).json()
         try:
-            rowCount = json.loads(response.content)['status']['rowCount']
+            rowCount = response['status']['rowCount']
         except:
             rowCount = None
 
@@ -533,8 +529,7 @@ class Column(object):
             url = self.dataset_url + '/columns/{}/values'.format(
                 self.name[1:-1])
             logging.debug("Getting values at {}".format(url))
-            response = requests.get(url)
-            return json.loads(response.content)
+            return requests.get(url).json()
         else:
             result = self.query.executeQuery(format="soa")
             if len(result) > 2:
@@ -554,7 +549,6 @@ class Column(object):
 
     def toPandas(self):
         result = self.query.executeQuery(format="soa")
-        logging.debug("Response\n{}".format(json.dumps(result, indent=4)))
         if len(result) > 2:
             raise RuntimeError("Only one column should be returned")
         colName = [x for x in result.keys() if x != "_rowName"][0]
@@ -570,9 +564,9 @@ class Column(object):
         col = self.copy()
         col.query.setLIMIT(40)
         print(col.toPandas())
-        response = requests.get(col.dataset_url)
+        response = requests.get(col.dataset_url).json()
         try:
-            rowCount = json.loads(response.content)['status']['rowCount']
+            rowCount = response['status']['rowCount']
         except:
             rowCount = None
 
