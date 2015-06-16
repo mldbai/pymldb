@@ -161,13 +161,15 @@ def run_query(q):
 
     resp = requests.get(host+"/v1/query", 
         params={"q": q, "format": "aos"})
-    
+
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)
+
+    resp_json = resp.json()
+    if len(resp_json) == 0: 
+        return pd.DataFrame()
     else:
-        df = pd.DataFrame.from_records(resp.json())
-        if len(df): df.set_index("_rowName")
-        return df
+        return pd.DataFrame.from_records(resp_json, index="_rowName")
 
 
 ###############################################################################

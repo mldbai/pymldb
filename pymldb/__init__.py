@@ -17,11 +17,12 @@ class Connection(object):
         
     def query(self, sql):
         resp = self.v1.query.get(params=dict(q=sql, format="aos"))
-        if resp.status_code != 200:
-            return resp
-        df = pd.DataFrame.from_records(resp.json())
-        if len(df): df.set_index("_rowName")
-        return df
+        if resp.status_code != 200: return resp
+        resp_json = resp.json()
+        if len(resp_json) == 0: 
+            return pd.DataFrame()
+        else:
+            return pd.DataFrame.from_records(resp_json, index="_rowName")
     
     def batframe(self, dataset_id):
         return data.BatFrame(self.v1.datasets(dataset_id).uri)
