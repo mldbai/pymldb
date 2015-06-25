@@ -24,8 +24,8 @@ class Connection(object):
         else:
             return pd.DataFrame.from_records(resp_json, index="_rowName")
     
-    def batframe(self, dataset_id):
-        return data.BatFrame(self.v1.datasets(dataset_id).uri)
+    #def batframe(self, dataset_id):
+    #    return data.BatFrame(self.v1.datasets(dataset_id).uri)
 
 
 # IPython Magic system
