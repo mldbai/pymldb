@@ -11,7 +11,7 @@ class ResourceError(Exception):
 
 def decorate_response(fn):
     def inner(*args, **kwargs):
-        raise_on_error = False
+        raise_on_error = True
         if "raise_on_error" in kwargs:
             raise_on_error = kwargs["raise_on_error"]
             del kwargs["raise_on_error"]
@@ -55,7 +55,7 @@ class Resource(object):
     
     @decorate_response
     def delete_and_put_json(self, payload): 
-        self.delete(raise_on_error=True)
+        self.delete()
         return requests.put(self.uri, data=json.dumps(payload))
 
     @decorate_response
