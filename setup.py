@@ -28,7 +28,7 @@ setup(
     description='Python interface to MLDB',
     long_description=long_description,
 
-    url='https://github.com/mldbai/pymldb',
+    url='https://github.com/datacratic/pymldb',
     author='Datacratic',
     author_email='mldbai@datacratic.com',
     license='BSD',
