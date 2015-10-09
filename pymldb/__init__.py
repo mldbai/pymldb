@@ -16,7 +16,7 @@ class Connection(object):
         self.v1 = resource.Resource(self.host).v1
         
     def query(self, sql):
-        resp = self.v1.query.get(params=dict(q=sql, format="aos"), raise_on_error=False)
+        resp = self.v1.query.get(q=sql, format="aos", raise_on_error=False)
         if resp.status_code != 200: return resp
         resp_json = resp.json()
         if len(resp_json) == 0: 
