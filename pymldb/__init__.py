@@ -6,7 +6,6 @@
 from pymldb import resource
 import pandas as pd
 
-
 class Connection(object):
     
     def __init__(self, host="http://localhost"):
@@ -16,13 +15,11 @@ class Connection(object):
         self.v1 = resource.Resource(self.host).v1
         
     def query(self, sql):
-        resp = self.v1.query.get(q=sql, format="aos", raise_on_error=False)
-        if resp.status_code != 200: return resp
-        resp_json = resp.json()
-        if len(resp_json) == 0: 
+        resp = self.v1.query.get(q=sql, format="table").json()
+        if len(resp) == 0: 
             return pd.DataFrame()
         else:
-            return pd.DataFrame.from_records(resp_json, index="_rowName")
+            return pd.DataFrame.from_records(resp[1:], columns=resp[0], index="_rowName")
     
     #def batframe(self, dataset_id):
     #    return data.BatFrame(self.v1.datasets(dataset_id).uri)
@@ -30,10 +27,10 @@ class Connection(object):
 
 # IPython Magic system
 
-def load_ipython_extension(ipython, *args):
-    from pymldb.magic import dispatcher
-    dispatcher("init http://localhost")
-    ipython.register_magic_function(dispatcher, 'line_cell', magic_name="mldb")
+#def load_ipython_extension(ipython, *args):
+#    from pymldb.magic import dispatcher
+#    dispatcher("init http://localhost")
+#    ipython.register_magic_function(dispatcher, 'line_cell', magic_name="mldb")
 
-def unload_ipython_extension(ipython):
-    pass
+#def unload_ipython_extension(ipython):
+#    pass

@@ -15,12 +15,8 @@ class ResourceError(Exception):
 
 def decorate_response(fn):
     def inner(*args, **kwargs):
-        raise_on_error = True
-        if "raise_on_error" in kwargs:
-            raise_on_error = kwargs["raise_on_error"]
-            del kwargs["raise_on_error"]
         result = add_repr_html_to_response(fn(*args, **kwargs))
-        if raise_on_error and result.status_code >= 400:
+        if result.status_code >= 400:
             raise ResourceError(result)
         return result
     return inner
