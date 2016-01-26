@@ -38,20 +38,29 @@ class Connection(object):
     def __init__(self, host="http://localhost"):
         if not host.startswith("http"):
             raise Exception("URIs must start with 'http'")
+        if host[-1] == '/':
+            host = host[:-1]
         self.uri = host
 
     @decorate_response
     def get(self, url, **kwargs):
-        return requests.get(
-            self.uri + url,
-            params={str(k) : str(v) for k, v in kwargs.iteritems() })
+        params = {}
+        for k, v in kwargs.iteritems():
+            if type(v) in [dict, list]:
+                v = json.dumps(v)
+            params[str(k)] = v
+        return requests.get(self.uri + url, params=params)
 
     @decorate_response
     def put(self, url, payload=None):
+        if payload is None:
+            payload = {}
         return requests.put(self.uri + url, json=payload)
 
     @decorate_response
     def post(self, url, payload=None):
+        if payload is None:
+            payload = {}
         return requests.post(self.uri + url, json=payload)
 
     @decorate_response
