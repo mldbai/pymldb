@@ -33,7 +33,7 @@ class ResourceError(Exception):
         self.result = r
 
 
-class mldb(object):
+class Connection(object):
 
     def __init__(self, host="http://localhost"):
         if not host.startswith("http"):
@@ -59,7 +59,7 @@ class mldb(object):
         return requests.delete(self.uri + url)
 
     def query(self, sql):
-        resp = self.v1.query.get(q=sql, format="table").json()
+        resp = self.get('/v1/query', q=sql, format="table").json()
         if len(resp) == 0:
             return pd.DataFrame()
         else:
