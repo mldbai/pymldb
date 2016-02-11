@@ -56,6 +56,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy',
                       'pandas',
+                      'pygments',
 		      'requests[security]>=2.6',
 		     ],
 )
