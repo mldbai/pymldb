@@ -43,13 +43,13 @@ class Connection(object):
         self.uri = host
 
     @decorate_response
-    def get(self, url, **kwargs):
+    def get(self, url, data=None, **kwargs):
         params = {}
         for k, v in kwargs.iteritems():
             if type(v) in [dict, list]:
                 v = json.dumps(v)
             params[str(k)] = v
-        return requests.get(self.uri + url, params=params)
+        return requests.get(self.uri + url, params=params, json=data)
 
     @decorate_response
     def put(self, url, payload=None):
