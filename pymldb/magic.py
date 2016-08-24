@@ -160,7 +160,7 @@ def run_query(q):
     global host
 
     resp = requests.get(host+"/v1/query", 
-        params={"q": q, "format": "aos"})
+        data={"q": q, "format": "aos"})
 
     if resp.status_code != 200:
         return add_repr_html_to_response(resp)

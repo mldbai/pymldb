@@ -68,7 +68,7 @@ class Connection(object):
         return requests.delete(self.uri + url)
 
     def query(self, sql):
-        resp = self.get('/v1/query', q=sql, format="table").json()
+        resp = self.get('/v1/query', data={"q": sql, "format": "table"}).json()
         if len(resp) == 0:
             return pd.DataFrame()
         else:
