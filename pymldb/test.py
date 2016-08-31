@@ -32,7 +32,7 @@ df = pandas.DataFrame.from_records(
 assert mldb.query('select * from patate order by x').equals(df)
 
 # some other format
-mldb.query('select * from patate order by x',
+assert mldb.query('select * from patate order by x',
            format='soa',
            rowNames=False) == {'x': [1,2], 'y': [2,3]}
 
