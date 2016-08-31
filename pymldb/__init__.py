@@ -67,10 +67,30 @@ class Connection(object):
     def delete(self, url):
         return requests.delete(self.uri + url)
 
-    def query(self, sql):
-        resp = self.get('/v1/query', data={"q": sql, "format": "table"}).json()
-        if len(resp) == 0:
-            return pd.DataFrame()
-        else:
-            return pd.DataFrame.from_records(resp[1:], columns=resp[0],
-                                             index="_rowName")
+    def query(self, sql, **kwargs):
+        """
+        Shortcut for GET /v1/query, with extra possible formats.
+
+        extra formats
+            dataframe : put the returned data into a pandas.DataFarme
+            scalar : returns the first value of the first row
+        """
+        format = kwargs.get('format', 'dataframe')
+        if format == 'dataframe':
+            kwargs['format'] = 'table'
+        elif format == 'scalar':
+            kwargs['format'] = 'table'
+            kwargs['rowNames'] = False
+        kwargs['q'] = sql
+        resp = self.get('/v1/query', **kwargs).json()
+
+        if format == 'dataframe':
+            if len(resp) == 0:
+                return pd.DataFrame()
+            else:
+                return pd.DataFrame.from_records(resp[1:], columns=resp[0],
+                                                index="_rowName")
+        if format == 'scalar':
+            return resp[1][0]
+
+        return resp
