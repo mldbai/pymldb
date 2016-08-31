@@ -77,6 +77,7 @@ class Connection(object):
         if format == 'dataframe':
             kwargs['format'] = 'table'
             kwargs['rowNames'] = True
+            kwargs['headers'] = True
         kwargs['q'] = sql
         resp = self.get('/v1/query', **kwargs).json()
 
