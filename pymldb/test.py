@@ -31,10 +31,6 @@ df = pandas.DataFrame.from_records(
     index='_rowName')
 assert mldb.query('select * from patate order by x').equals(df)
 
-# scalar format
-assert mldb.query('select count(*) from patate', format='scalar') == 2
-assert mldb.query('select x,y from patate order by x', format='scalar') == 1
-
 # some other format
 mldb.query('select * from patate order by x',
            format='soa',

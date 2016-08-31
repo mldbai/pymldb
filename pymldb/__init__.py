@@ -69,18 +69,14 @@ class Connection(object):
 
     def query(self, sql, **kwargs):
         """
-        Shortcut for GET /v1/query, with extra possible formats.
-
-        extra formats
-            dataframe : put the returned data into a pandas.DataFarme
-            scalar : returns the first value of the first row
+        Shortcut for GET /v1/query. Will pass the `kwargs` to /v1/query, and
+        accepts an extra `format` argument, "dataframe" (the default) that will
+        return the data as a `pandas.Dataframe`.
         """
         format = kwargs.get('format', 'dataframe')
         if format == 'dataframe':
             kwargs['format'] = 'table'
-        elif format == 'scalar':
-            kwargs['format'] = 'table'
-            kwargs['rowNames'] = False
+            kwargs['rowNames'] = True
         kwargs['q'] = sql
         resp = self.get('/v1/query', **kwargs).json()
 
@@ -90,7 +86,4 @@ class Connection(object):
             else:
                 return pd.DataFrame.from_records(resp[1:], columns=resp[0],
                                                 index="_rowName")
-        if format == 'scalar':
-            return resp[1][0]
-
         return resp
