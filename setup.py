@@ -41,7 +41,7 @@ setup(
         'Programming Language :: Python :: 2',
 
         'Intended Audience :: Developers',
-	'Topic :: Database :: Database Engines/Servers',
+        'Topic :: Database :: Database Engines/Servers',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
@@ -54,9 +54,10 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy',
-                      'pandas',
-                      'pygments',
-		      'requests[security]>=2.6',
-		     ],
+    install_requires=[
+        'numpy',
+        'pandas',
+        'pygments',
+        'requests[security]>=2.6',
+    ],
 )
