@@ -22,7 +22,6 @@ mldb.post('/v1/datasets/patate/rows', {
 })
 mldb.post('/v1/datasets/patate/commit')
 
-
 # test mldb.query
 # default format (dataframe)
 df = pandas.DataFrame.from_records(

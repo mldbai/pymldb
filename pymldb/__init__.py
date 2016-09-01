@@ -69,22 +69,16 @@ class Connection(object):
 
     def query(self, sql, **kwargs):
         """
-        Shortcut for GET /v1/query. Will pass the `kwargs` to /v1/query, and
-        accepts an extra `format` argument, "dataframe" (the default) that will
-        return the data as a `pandas.Dataframe`.
+        Shortcut for GET /v1/query, except with argument format='dataframe'
+        (the default), in which case it will simply wrap the result of the GET
+        query to /v1/query (with format='table') in a `pandas.DataFrame`.
         """
-        format = kwargs.get('format', 'dataframe')
-        if format == 'dataframe':
-            kwargs['format'] = 'table'
-            kwargs['rowNames'] = True
-            kwargs['headers'] = True
-        kwargs['q'] = sql
-        resp = self.get('/v1/query', **kwargs).json()
-
-        if format == 'dataframe':
+        if 'format' not in kwargs or kwargs['format'] == 'dataframe':
+            resp = self.get('/v1/query', data={'q': sql, 'format': 'table'}).json()
             if len(resp) == 0:
                 return pd.DataFrame()
             else:
                 return pd.DataFrame.from_records(resp[1:], columns=resp[0],
                                                 index="_rowName")
-        return resp
+        kwargs['q'] = sql
+        return self.get('/v1/query', **kwargs).json()
