@@ -23,7 +23,7 @@ setup(
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
-    version='0.7.1',
+    version='0.7.2',
 
     description='Python interface to MLDB',
     long_description=long_description,
