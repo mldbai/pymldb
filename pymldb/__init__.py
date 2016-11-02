@@ -9,6 +9,9 @@ import pandas as pd
 import requests
 import json
 from pymldb.util import add_repr_html_to_response
+import threading
+from steps_logger import StepsLogger
+from IPython.display import display, HTML
 
 
 def decorate_response(fn):
@@ -82,3 +85,74 @@ class Connection(object):
                                                 index="_rowName")
         kwargs['q'] = sql
         return self.get('/v1/query', **kwargs).json()
+
+    def post_run_and_track_procedure(self, payload, refresh_rate_sec=10):
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params']['runOnCreation'] = False
+
+        res = requests.post(self.uri + '/v1/procedures', json=payload).json()
+        proc_id = res['id']
+        event = threading.Event()
+
+        def monitor_progress():
+            # wrap everything in a try/except because exceptions are not passed to
+            # mldb.log by themselves.
+            try:
+                # find run id
+                run_id = None
+                sl = StepsLogger()
+                while not event.wait(refresh_rate_sec):
+                    if run_id is None:
+                        res = self.get('/v1/procedures/{}/runs'.format(proc_id)).json()
+                        if res:
+                            run_id = res[0]
+                        else:
+                            continue
+                        run_id_flat = run_id
+                        for c in '-.:':
+                            run_id_flat = run_id_flat.replace(c, '_')
+                        display(HTML("""
+                            <script type="text/javascript">
+                                function cancel_{run_id_flat}() {{
+                                    $.post("/v1/procedures/{proc_id}/runs/{run_id}/state", {{"state" : "cancelled"}});
+                                }}
+                            </script>
+                            <button id="{run_id_flat}" onclick="cancel_{run_id_flat}();">Cancel</button>
+                        """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id)))
+                    res = requests.get(self.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
+                    if res['state'] == 'executing':
+                        display(HTML("""
+                            <script type="text/javascript" class="partial">
+                                $(".partial").parent().remove();
+                            </script>
+                        """))
+                        sl.log_progress_steps(res['progress']['steps'])
+                    else:
+                        break
+                if run_id is not None:
+                    display(HTML("""
+                        <script type="text/javascript">
+                            $(function() {{
+                                $("#{run_id_flat}").remove();
+                            }})
+                        </script>
+                    """.format(run_id_flat=run_id_flat)))
+
+
+            except Exception as e:
+                print str(e)
+                import traceback
+                print traceback.format_exc()
+
+        t = threading.Thread(target=monitor_progress)
+        t.start()
+
+        try:
+            return requests.post(self.uri + '/v1/procedures/{}/runs'.format(proc_id), json={}).json()
+        except Exception as e:
+            print e
+        finally:
+            event.set()
+            t.join()
+
