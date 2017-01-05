@@ -5,6 +5,8 @@
 # Copyright (c) 2013 Datacratic. All rights reserved.
 #
 
+from version import __version__
+
 import pandas as pd
 import requests
 import json
