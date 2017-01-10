@@ -7,7 +7,7 @@
 
 from version import __version__
 
-#import pandas as pd
+import pandas as pd
 import requests
 import json
 from pymldb.util import add_repr_html_to_response
