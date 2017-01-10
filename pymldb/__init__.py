@@ -7,7 +7,7 @@
 
 from version import __version__
 
-import pandas as pd
+#import pandas as pd
 import requests
 import json
 from pymldb.util import add_repr_html_to_response
@@ -114,14 +114,29 @@ class Connection(object):
                         run_id_flat = run_id
                         for c in '-.:':
                             run_id_flat = run_id_flat.replace(c, '_')
+                        if self.uri == 'localhost':
+                            host = ''
+                            url.format(host='', proc_id=proc_id, run_id=run_id)
+                        else:
+                            host = self.uri
                         display(HTML("""
                             <script type="text/javascript">
-                                function cancel_{run_id_flat}() {{
-                                    $.post("/v1/procedures/{proc_id}/runs/{run_id}/state", {{"state" : "cancelled"}});
+                                function cancel_{run_id_flat}(btn) {{
+                                    $(btn).attr("disabled", true).html("Cancelling...");
+                                    $.ajax({{
+                                        url: "{host}/v1/procedures/{proc_id}/runs/{run_id}/state",
+                                        type: 'PUT',
+                                        data: JSON.stringify({{"state" : "cancelled"}}),
+                                        success: () => {{ $(btn).html("Cancelled"); }},
+                                        error: (xhr) => {{ console.error(xhr);
+                                                           console.warn("If this is a Cross-Origin Request, this is a normal error. Otherwise you may report it.");
+                                                           $(btn).html("Cancellation failed - See JavaScript console");
+                                                        }}
+                                    }});
                                 }}
                             </script>
-                            <button id="{run_id_flat}" onclick="cancel_{run_id_flat}();">Cancel</button>
-                        """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id)))
+                            <button id="{run_id_flat}" onclick="cancel_{run_id_flat}(this);">Cancel</button>
+                        """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id, host=host)))
                     res = requests.get(self.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
                     if res['state'] == 'executing':
                         display(HTML("""
