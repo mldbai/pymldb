@@ -100,7 +100,7 @@ class Connection(object):
             raise Exception("The only supported route is /v1/procedures")
         parts = url.split('/')
         len_parts = len(parts)
-        if len_parts < 4 or len_parts == 5 or len_parts > 6:
+        if len_parts not in [4, 6]:
             raise Exception(
                 "You must either PUT a procedure or a procedure run")
 
