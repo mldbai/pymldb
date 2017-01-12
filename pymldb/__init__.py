@@ -12,8 +12,7 @@ import requests
 import json
 from pymldb.util import add_repr_html_to_response
 import threading
-from steps_logger import StepsLogger
-from IPython.display import display, HTML
+from progress_monitor import ProgressMonitor
 
 
 def decorate_response(fn):
@@ -84,85 +83,27 @@ class Connection(object):
                 return pd.DataFrame()
             else:
                 return pd.DataFrame.from_records(resp[1:], columns=resp[0],
-                                                index="_rowName")
+                                                 index="_rowName")
         kwargs['q'] = sql
         return self.get('/v1/query', **kwargs).json()
 
-    def post_run_and_track_procedure(self, payload, refresh_rate_sec=10):
+    def put_and_track(self, url, payload, refresh_rate_sec=1):
+        if not url.startswith('/v1/procedures'):
+            raise Exception("The only supported route is /v1/procedures")
+
+    def post_and_track(self, url, payload, refresh_rate_sec=1):
+        if url != '/v1/procedures':
+            raise Exception("The only supported route is /v1/procedures")
+
         if 'params' not in payload:
             payload['params'] = {}
         payload['params']['runOnCreation'] = False
 
         res = requests.post(self.uri + '/v1/procedures', json=payload).json()
         proc_id = res['id']
-        event = threading.Event()
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id)
 
-        def monitor_progress():
-            # wrap everything in a try/except because exceptions are not passed to
-            # mldb.log by themselves.
-            try:
-                # find run id
-                run_id = None
-                sl = StepsLogger()
-                while not event.wait(refresh_rate_sec):
-                    if run_id is None:
-                        res = self.get('/v1/procedures/{}/runs'.format(proc_id)).json()
-                        if res:
-                            run_id = res[0]
-                        else:
-                            continue
-                        run_id_flat = run_id
-                        for c in '-.:':
-                            run_id_flat = run_id_flat.replace(c, '_')
-                        if self.uri == 'localhost':
-                            host = ''
-                            url.format(host='', proc_id=proc_id, run_id=run_id)
-                        else:
-                            host = self.uri
-                        display(HTML("""
-                            <script type="text/javascript">
-                                function cancel_{run_id_flat}(btn) {{
-                                    $(btn).attr("disabled", true).html("Cancelling...");
-                                    $.ajax({{
-                                        url: "{host}/v1/procedures/{proc_id}/runs/{run_id}/state",
-                                        type: 'PUT',
-                                        data: JSON.stringify({{"state" : "cancelled"}}),
-                                        success: () => {{ $(btn).html("Cancelled"); }},
-                                        error: (xhr) => {{ console.error(xhr);
-                                                           console.warn("If this is a Cross-Origin Request, this is a normal error. Otherwise you may report it.");
-                                                           $(btn).html("Cancellation failed - See JavaScript console");
-                                                        }}
-                                    }});
-                                }}
-                            </script>
-                            <button id="{run_id_flat}" onclick="cancel_{run_id_flat}(this);">Cancel</button>
-                        """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id, host=host)))
-                    res = requests.get(self.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
-                    if res['state'] == 'executing':
-                        display(HTML("""
-                            <script type="text/javascript" class="partial">
-                                $(".partial").parent().remove();
-                            </script>
-                        """))
-                        sl.log_progress_steps(res['progress']['steps'])
-                    else:
-                        break
-                if run_id is not None:
-                    display(HTML("""
-                        <script type="text/javascript">
-                            $(function() {{
-                                $("#{run_id_flat}").remove();
-                            }})
-                        </script>
-                    """.format(run_id_flat=run_id_flat)))
-
-
-            except Exception as e:
-                print str(e)
-                import traceback
-                print traceback.format_exc()
-
-        t = threading.Thread(target=monitor_progress)
+        t = threading.Thread(target=pm.monitor_progress)
         t.start()
 
         try:
@@ -170,6 +111,5 @@ class Connection(object):
         except Exception as e:
             print e
         finally:
-            event.set()
+            pm.event.set()
             t.join()
-
