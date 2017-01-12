@@ -148,7 +148,7 @@ class Connection(object):
             payload['params'] = {}
         payload['params']['runOnCreation'] = False
 
-        res = requests.post(self.uri + '/v1/procedures', json=payload).json()
+        res = self.post('/v1/procedures', payload).json()
         proc_id = res['id']
 
         pm = ProgressMonitor(self, refresh_rate_sec, proc_id,
@@ -158,7 +158,7 @@ class Connection(object):
         t.start()
 
         try:
-            return requests.post(self.uri + '/v1/procedures/{}/runs'.format(proc_id), json={}).json()
+            return self.post('/v1/procedures/{}/runs'.format(proc_id), {})
         except Exception as e:
             print(e)
         finally:
