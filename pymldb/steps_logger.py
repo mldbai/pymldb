@@ -3,6 +3,8 @@
 # Mich, 2016-10-27
 # Copyright (c) 2016 Datacratic. All rights reserved.
 #
+# Manages the display of steps.
+#
 from __future__ import absolute_import, division, print_function
 
 from tqdm import tqdm, tqdm_notebook
@@ -13,6 +15,9 @@ def getStepsLogger(notebook):
     return TextStepsLogger()
 
 class TextStepsLogger(object):
+    """
+    Uses a single textual progress bar. Usefull for cli.
+    """
     def __init__(self):
         self.steps = {}
         self.pbar = None
@@ -59,6 +64,9 @@ class TextStepsLogger(object):
 
 
 class NotebookStepsLogger(object):
+    """
+    Displays notebook HTML progress bars for all the steps at once.
+    """
 
     def __init__(self):
         self.steps = {}

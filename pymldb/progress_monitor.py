@@ -3,6 +3,11 @@
 # Mich, 2017-01-12
 # Copyright (c) 2017 Datacratic. All rights reserved.
 #
+# Tracks the progression of a procedure as long as it is running and updates
+# progress output via a StepLogger. When in notebook mode, also displays a
+# cancel button. The button # will fail if the notebook is not under the same
+# host:port than MLDB because of cross origin policies.
+#
 from __future__ import absolute_import, division, print_function
 import threading
 import requests
