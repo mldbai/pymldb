@@ -40,12 +40,13 @@ class ResourceError(Exception):
 
 class Connection(object):
 
-    def __init__(self, host="http://localhost"):
+    def __init__(self, host="http://localhost", notebook=True):
         if not host.startswith("http"):
             raise Exception("URIs must start with 'http'")
         if host[-1] == '/':
             host = host[:-1]
         self.uri = host
+        self.notebook = notebook
 
     @decorate_response
     def get(self, url, data=None, **kwargs):
@@ -113,7 +114,8 @@ class Connection(object):
         elif len_parts == 6:
             run_id = parts[-1]
 
-        pm = ProgressMonitor(self, refresh_rate_sec, proc_id, run_id)
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id, run_id,
+                             self.notebook)
         t = threading.Thread(target=pm.monitor_progress)
         t.start()
 
@@ -149,7 +151,8 @@ class Connection(object):
         res = requests.post(self.uri + '/v1/procedures', json=payload).json()
         proc_id = res['id']
 
-        pm = ProgressMonitor(self, refresh_rate_sec, proc_id)
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id,
+                             notebook=self.notebook)
 
         t = threading.Thread(target=pm.monitor_progress)
         t.start()
