@@ -23,7 +23,6 @@ class ProgressMonitor(object):
         proc_id = self.proc_id
         run_id = self.run_id
         conn = self.conn
-        run_id_flat = None
         refresh_rate_sec = 0.5
         try:
             # find run id
@@ -61,24 +60,24 @@ class ProgressMonitor(object):
                             }}
                         </script>
                         <button id="{run_id_flat}" onclick="cancel_{run_id_flat}(this);">Cancel</button>
+                        display 1
                     """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id, host=host)))
                 res = requests.get(conn.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
                 if res['state'] == 'executing':
-                    display(HTML("""
-                        <script type="text/javascript" class="partial">
-                            $(".partial").parent().remove();
-                        </script>
-                    """))
                     sl.log_progress_steps(res['progress']['steps'])
                 else:
                     break
             if run_id is not None:
                 display(HTML("""
-                    <script type="text/javascript">
+                    <script type="text/javascript" class="removeMe">
                         $(function() {{
-                            $("#{run_id_flat}").remove();
+                            var outputArea = $(".removeMe").parents(".output_area:first");
+                            outputArea.prevAll().remove();
+                            outputArea.next().remove();
+                            outputArea.remove();
                         }})
                     </script>
+                    display 2
                 """.format(run_id_flat=run_id_flat)))
                 res = requests.get(conn.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
                 if res['state'] == 'finished':

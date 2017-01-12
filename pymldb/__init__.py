@@ -4,15 +4,16 @@
 # Mich, 2016-01-26
 # Copyright (c) 2013 Datacratic. All rights reserved.
 #
+from __future__ import absolute_import, division, print_function
 
-from version import __version__
+from .version import __version__  # noqa
 
 import pandas as pd
 import requests
 import json
 from pymldb.util import add_repr_html_to_response
 import threading
-from progress_monitor import ProgressMonitor
+from .progress_monitor import ProgressMonitor
 
 
 def decorate_response(fn):
@@ -88,12 +89,58 @@ class Connection(object):
         return self.get('/v1/query', **kwargs).json()
 
     def put_and_track(self, url, payload, refresh_rate_sec=1):
+        """
+        Put and track progress, displaying progress bars.
+
+        May display the wrong progress if 2 things post/put on the same
+        procedure name at the same time.
+        """
         if not url.startswith('/v1/procedures'):
             raise Exception("The only supported route is /v1/procedures")
+        parts = url.split('/')
+        len_parts = len(parts)
+        if len_parts < 4 or len_parts == 5 or len_parts > 6:
+            # invalid, return the put error
+            return self.put(url, payload).json()
+
+        proc_id = parts[3]
+        run_id = None
+
+        if len_parts == 4:
+                if 'params' not in payload:
+                    payload['params'] = {}
+                payload['params']['runOnCreation'] = True
+        elif len_parts == 6:
+            run_id = parts[-1]
+
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id, run_id)
+        t = threading.Thread(target=pm.monitor_progress)
+        t.start()
+
+        try:
+            return self.put(url, payload)
+        except Exception as e:
+            print(e)
+        finally:
+            pass
+            pm.event.set()
+            t.join()
 
     def post_and_track(self, url, payload, refresh_rate_sec=1):
-        if url != '/v1/procedures':
+        """
+        Post and track progress, displaying progress bars.
+
+        May display the wrong progress if 2 things post/put on the same
+        procedure name at the same time.
+        """
+        if not url.startswith('/v1/procedures'):
             raise Exception("The only supported route is /v1/procedures")
+        if url.endswith('/runs'):
+            raise Exception(
+                "Posting and tracking run is unsupported at the moment")
+        if len(url.split('/')) != 3:
+            # bad url, return the error from a regular post
+            return self.post(url, payload).json()
 
         if 'params' not in payload:
             payload['params'] = {}
@@ -101,6 +148,7 @@ class Connection(object):
 
         res = requests.post(self.uri + '/v1/procedures', json=payload).json()
         proc_id = res['id']
+
         pm = ProgressMonitor(self, refresh_rate_sec, proc_id)
 
         t = threading.Thread(target=pm.monitor_progress)
@@ -109,7 +157,7 @@ class Connection(object):
         try:
             return requests.post(self.uri + '/v1/procedures/{}/runs'.format(proc_id), json={}).json()
         except Exception as e:
-            print e
+            print(e)
         finally:
             pm.event.set()
             t.join()
