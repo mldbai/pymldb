@@ -101,8 +101,8 @@ class Connection(object):
         parts = url.split('/')
         len_parts = len(parts)
         if len_parts < 4 or len_parts == 5 or len_parts > 6:
-            # invalid, return the put error
-            return self.put(url, payload).json()
+            raise Exception(
+                "You must either PUT a procedure or a procedure run")
 
         proc_id = parts[3]
         run_id = None
@@ -141,8 +141,7 @@ class Connection(object):
             raise Exception(
                 "Posting and tracking run is unsupported at the moment")
         if len(url.split('/')) != 3:
-            # bad url, return the error from a regular post
-            return self.post(url, payload).json()
+            raise Exception("You must POST a procedure")
 
         if 'params' not in payload:
             payload['params'] = {}
