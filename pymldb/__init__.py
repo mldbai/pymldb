@@ -4,13 +4,16 @@
 # Mich, 2016-01-26
 # Copyright (c) 2013 Datacratic. All rights reserved.
 #
+from __future__ import absolute_import, division, print_function
 
-from version import __version__
+from .version import __version__  # noqa
 
 import pandas as pd
 import requests
 import json
 from pymldb.util import add_repr_html_to_response
+import threading
+from .progress_monitor import ProgressMonitor
 
 
 def decorate_response(fn):
@@ -37,12 +40,13 @@ class ResourceError(Exception):
 
 class Connection(object):
 
-    def __init__(self, host="http://localhost"):
+    def __init__(self, host="http://localhost", notebook=True):
         if not host.startswith("http"):
             raise Exception("URIs must start with 'http'")
         if host[-1] == '/':
             host = host[:-1]
         self.uri = host
+        self.notebook = notebook
 
     @decorate_response
     def get(self, url, data=None, **kwargs):
@@ -81,6 +85,81 @@ class Connection(object):
                 return pd.DataFrame()
             else:
                 return pd.DataFrame.from_records(resp[1:], columns=resp[0],
-                                                index="_rowName")
+                                                 index="_rowName")
         kwargs['q'] = sql
         return self.get('/v1/query', **kwargs).json()
+
+    def put_and_track(self, url, payload, refresh_rate_sec=1):
+        """
+        Put and track progress, displaying progress bars.
+
+        May display the wrong progress if 2 things post/put on the same
+        procedure name at the same time.
+        """
+        if not url.startswith('/v1/procedures'):
+            raise Exception("The only supported route is /v1/procedures")
+        parts = url.split('/')
+        len_parts = len(parts)
+        if len_parts not in [4, 6]:
+            raise Exception(
+                "You must either PUT a procedure or a procedure run")
+
+        proc_id = parts[3]
+        run_id = None
+
+        if len_parts == 4:
+                if 'params' not in payload:
+                    payload['params'] = {}
+                payload['params']['runOnCreation'] = True
+        elif len_parts == 6:
+            run_id = parts[-1]
+
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id, run_id,
+                             self.notebook)
+        t = threading.Thread(target=pm.monitor_progress)
+        t.start()
+
+        try:
+            return self.put(url, payload)
+        except Exception as e:
+            print(e)
+        finally:
+            pass
+            pm.event.set()
+            t.join()
+
+    def post_and_track(self, url, payload, refresh_rate_sec=1):
+        """
+        Post and track progress, displaying progress bars.
+
+        May display the wrong progress if 2 things post/put on the same
+        procedure name at the same time.
+        """
+        if not url.startswith('/v1/procedures'):
+            raise Exception("The only supported route is /v1/procedures")
+        if url.endswith('/runs'):
+            raise Exception(
+                "Posting and tracking run is unsupported at the moment")
+        if len(url.split('/')) != 3:
+            raise Exception("You must POST a procedure")
+
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params']['runOnCreation'] = False
+
+        res = self.post('/v1/procedures', payload).json()
+        proc_id = res['id']
+
+        pm = ProgressMonitor(self, refresh_rate_sec, proc_id,
+                             notebook=self.notebook)
+
+        t = threading.Thread(target=pm.monitor_progress)
+        t.start()
+
+        try:
+            return self.post('/v1/procedures/{}/runs'.format(proc_id), {})
+        except Exception as e:
+            print(e)
+        finally:
+            pm.event.set()
+            t.join()
