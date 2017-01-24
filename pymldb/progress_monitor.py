@@ -79,6 +79,8 @@ class ProgressMonitor(object):
                         sl.log_progress_steps(res['progress']['steps'])
                     else:
                         sl.log_progress_steps([res['progress']])
+                elif res['state'] == 'initializing':
+                    continue
                 else:
                     break
             if run_id is not None:
