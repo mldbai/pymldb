@@ -1,4 +1,4 @@
-#sad
+#
 # progress_monitor.py
 # Mich, 2017-01-12
 # Copyright (c) 2017 Datacratic. All rights reserved.
@@ -75,7 +75,12 @@ class ProgressMonitor(object):
                         """.format(run_id=run_id, run_id_flat=run_id_flat, proc_id=proc_id, host=host))
                 res = requests.get(conn.uri + '/v1/procedures/{}/runs/{}'.format(proc_id, run_id)).json()
                 if res['state'] == 'executing':
-                    sl.log_progress_steps(res['progress']['steps'])
+                    if 'steps' in res['progress']:
+                        sl.log_progress_steps(res['progress']['steps'])
+                    else:
+                        sl.log_progress_steps([res['progress']])
+                elif res['state'] == 'initializing':
+                    continue
                 else:
                     break
             if run_id is not None:
